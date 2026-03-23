@@ -11,9 +11,10 @@ LABEL org.opencontainers.image.version="${BUNDLE_VERSION}-${PAPERCLIP_VERSION}" 
       com.zaai.paperclip-version="${PAPERCLIP_VERSION}"
 
 # openssl is required at runtime for secret generation in entrypoint.sh
+# gosu is required for dropping root to node user after volume setup
 # locales is required for embedded PostgreSQL (needs en_US.UTF-8)
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl openssl locales tzdata \
+  && apt-get install -y --no-install-recommends ca-certificates curl openssl gosu locales tzdata \
   && sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen \
   && locale-gen \
   && rm -rf /var/lib/apt/lists/*
@@ -61,5 +62,4 @@ ENV NODE_ENV=production \
 VOLUME ["/paperclip-workspace"]
 EXPOSE 3100
 
-USER node
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

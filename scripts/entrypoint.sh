@@ -87,6 +87,11 @@ fi
 
 echo "[paperclip-synology] Working directory: ${PAPERCLIP_WORKING_DIR}"
 
+# --- Fix volume ownership (required for Docker-mounted volumes on Synology) ---
+chown node:node /paperclip-workspace
+chown -R node:node "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
+
 # --- Start the Paperclip server ---
 # paperclipai run handles bootstrap CEO invite generation automatically.
-exec paperclipai run
+# gosu drops from root to node user; exec replaces PID for proper signal handling.
+exec gosu node paperclipai run

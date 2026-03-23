@@ -50,7 +50,7 @@ No unit tests, linters, or formatters are configured. Verification is done by bu
 - Descriptive comment at the top explaining the image purpose
 - Inline comments explaining non-obvious decisions
 - Separate `RUN` per global npm install for Docker layer caching
-- Non-root execution: `USER node` at the end
+- Non-root execution: entrypoint runs as root for volume setup, then drops to `node` via `gosu`
 - Build args `BUNDLE_VERSION` and `PAPERCLIP_VERSION` for image labeling
 
 ### Configuration (config.json)
