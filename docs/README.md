@@ -33,13 +33,28 @@ Paperclip supports two deployment modes and two exposure levels:
 | `PAPERCLIP_DEPLOYMENT_MODE` | `authenticated` | Requires login, admin bootstrapped on first run | `local_trusted` — no auth | Binds to `127.0.0.1` only, unreachable from outside the container |
 | `PAPERCLIP_DEPLOYMENT_EXPOSURE` | `private` | LAN/VPN, lenient origin checks | `public` — strict origin/hostname validation | Synology NAS typically runs on a home or office network |
 
+## Bundled CLI Tools
+
+This image includes the following coding agent CLI tools, ready to use with Paperclip's agent features:
+
+- **Claude Code** (`@anthropic-ai/claude-code`)
+- **Codex** (`@openai/codex`)
+- **OpenCode** (`opencode-ai`)
+- **Gemini CLI** (`@google/gemini-cli`)
+- **Cursor Agent CLI** (installed via `cursor.com/install`, available as `agent`)
+
+No additional setup is required. Paperclip uses these tools automatically when running coding agent tasks. Each tool requires its own API key, configured through the Paperclip UI.
+
 ## Optional Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
 | `PAPERCLIP_PUBLIC_URL` | Auto-detected | Your NAS address, e.g. `http://192.168.1.50:3100`. Set this if accessing from other devices on your network |
-| `BETTER_AUTH_SECRET` | Auto-generated and persisted | Override the auto-generated auth secret |
+| `BETTER_AUTH_SECRET` | Auto-generated and persisted | Override the auto-generated session auth secret |
+| `PAPERCLIP_AGENT_JWT_SECRET` | Auto-generated and persisted | Override the auto-generated JWT secret for coding agents |
 | `DATABASE_URL` | Embedded database | Connect to an external Postgres instead of embedded |
+| `PORT` | `3100` | HTTP server port |
+| `SERVE_UI` | `true` | Set to `false` to run in API-only mode without the web UI |
 
 ## Directory Structure
 

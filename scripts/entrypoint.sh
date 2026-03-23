@@ -1,7 +1,7 @@
 #!/bin/bash
 # entrypoint.sh — Wrapper entrypoint for paperclip-synology.
-# Manages BETTER_AUTH_SECRET (auto-generate + persist) and sets
-# Synology-friendly defaults before exec-ing the Paperclip server.
+# Manages BETTER_AUTH_SECRET and PAPERCLIP_AGENT_JWT_SECRET (auto-generate + persist)
+# and sets Synology-friendly defaults before exec-ing the Paperclip server.
 set -e
 
 PAPERCLIP_HOME="${PAPERCLIP_HOME:-/paperclip-workspace/paperclip-home}"
