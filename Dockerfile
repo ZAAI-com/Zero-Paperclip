@@ -23,8 +23,10 @@ RUN PAPERCLIP_VERSION=${PAPERCLIP_VERSION:-$(npm view paperclipai version)} \
   && npm install --global --omit=dev paperclipai@${PAPERCLIP_VERSION}
 
 # Prepare workspace directories
-RUN mkdir -p /paperclip-workspace/user-home /paperclip-workspace/paperclip-home \
-  && chown -R node:node /paperclip-workspace
+RUN mkdir -p /paperclip-workspace/user-home
+RUN mkdir -p /paperclip-workspace/paperclip-home
+RUN mkdir -p /paperclip-workspace/paperclip-working
+RUN chown -R node:node /paperclip-workspace
 
 # Install global CLI tools
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest

@@ -14,6 +14,14 @@ A wrapper around Paperclip that auto-generates auth secrets and sets Synology-fr
 4. **First run only** — check `docker logs` for the admin invite URL (or find it at `/volume1/docker/paperclip/paperclip-home/.bootstrap-url`)
 5. Open `http://<NAS_IP>:3100` and use the invite URL to create your admin account
 
+## Agent Working Directory
+
+When setting up your first company/project in the Paperclip UI, you'll be prompted for a working directory where agents keep their memories and work on code. Enter:
+
+    /paperclip-workspace/paperclip-working
+
+This directory is pre-created inside the persistent volume and ready to use. On your Synology NAS filesystem, it maps to `/volume1/docker/paperclip/working` (or wherever you mounted the volume).
+
 ## Deployment Mode
 
 This image runs in **authenticated** mode with **private** exposure. An admin account is bootstrapped automatically on first run — check `docker logs` for the invite URL.

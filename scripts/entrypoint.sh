@@ -5,8 +5,10 @@
 set -e
 
 PAPERCLIP_HOME="${PAPERCLIP_HOME:-/paperclip-workspace/paperclip-home}"
+PAPERCLIP_WORKING_DIR="/paperclip-workspace/paperclip-working"
 mkdir -p "${HOME}"
 mkdir -p "${PAPERCLIP_HOME}"
+mkdir -p "${PAPERCLIP_WORKING_DIR}"
 SECRET_FILE="${PAPERCLIP_HOME}/.auth_secret"
 
 # --- BETTER_AUTH_SECRET management ---
@@ -64,6 +66,8 @@ CONF
   chmod 600 "${CONFIG_FILE}"
   echo "[paperclip-synology] Generated config at ${CONFIG_FILE}"
 fi
+
+echo "[paperclip-synology] Working directory: ${PAPERCLIP_WORKING_DIR}"
 
 # --- Start the Paperclip server ---
 # paperclipai run handles bootstrap CEO invite generation automatically.
