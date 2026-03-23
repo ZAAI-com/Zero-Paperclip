@@ -31,16 +31,13 @@ RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest
 RUN npm install --global --omit=dev @openai/codex@latest
 RUN npm install --global --omit=dev opencode-ai@latest
 RUN npm install --global --omit=dev @google/gemini-cli
-# Cursor CLI: only available for x86_64; install to a system-wide location accessible by the node user
-RUN if [ "$(uname -m)" = "x86_64" ]; then \
-      export HOME=/tmp \
-      && curl https://cursor.com/install -fsS | bash \
-      && if [ -f /tmp/.cursor/bin/cursor ]; then \
-           cp /tmp/.cursor/bin/cursor /usr/local/bin/cursor \
-           && chmod 755 /usr/local/bin/cursor; \
-         fi \
-      && rm -rf /tmp/.cursor; \
-    fi
+# Cursor Agent CLI: install via official script, copy binary to system PATH
+# Ref: https://cursor.com/docs/cli/installation
+RUN export HOME=/tmp \
+  && curl https://cursor.com/install -fsS | bash \
+  && cp /tmp/.local/bin/agent /usr/local/bin/agent \
+  && chmod 755 /usr/local/bin/agent \
+  && rm -rf /tmp/.local /tmp/.cursor
 
 # Add our entrypoint wrapper
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
