@@ -38,7 +38,7 @@ jobs:
 
       - name: Read bundle version
         id: bundle
-        run: echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+        run: echo "version=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
 
       - name: Get latest Paperclip version from npm
         id: paperclip

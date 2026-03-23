@@ -18,6 +18,12 @@ if [ -n "${BETTER_AUTH_SECRET}" ]; then
 elif [ -f "${SECRET_FILE}" ]; then
   # Read a previously persisted secret from disk.
   BETTER_AUTH_SECRET="$(cat "${SECRET_FILE}")"
+  if [ -z "${BETTER_AUTH_SECRET}" ]; then
+    echo "[paperclip-synology] Warning: Persisted auth secret is empty, regenerating..."
+    BETTER_AUTH_SECRET="$(openssl rand -hex 32)"
+    echo "${BETTER_AUTH_SECRET}" > "${SECRET_FILE}"
+    chmod 600 "${SECRET_FILE}"
+  fi
   export BETTER_AUTH_SECRET
   echo "[paperclip-synology] Using persisted auth secret."
 else
@@ -35,6 +41,12 @@ if [ -n "${PAPERCLIP_AGENT_JWT_SECRET}" ]; then
   :
 elif [ -f "${AGENT_JWT_FILE}" ]; then
   PAPERCLIP_AGENT_JWT_SECRET="$(cat "${AGENT_JWT_FILE}")"
+  if [ -z "${PAPERCLIP_AGENT_JWT_SECRET}" ]; then
+    echo "[paperclip-synology] Warning: Persisted agent JWT secret is empty, regenerating..."
+    PAPERCLIP_AGENT_JWT_SECRET="$(openssl rand -hex 32)"
+    echo "${PAPERCLIP_AGENT_JWT_SECRET}" > "${AGENT_JWT_FILE}"
+    chmod 600 "${AGENT_JWT_FILE}"
+  fi
   export PAPERCLIP_AGENT_JWT_SECRET
   echo "[paperclip-synology] Using persisted agent JWT secret."
 else
@@ -48,10 +60,16 @@ fi
 # --- Synology-friendly defaults (only set if not already defined) ---
 export SERVE_UI="${SERVE_UI:-true}"
 export PORT="${PORT:-3100}"
+if ! echo "${PORT}" | grep -qE '^[0-9]+$'; then
+  echo "[paperclip-synology] Warning: PORT '${PORT}' is not a valid integer, falling back to 3100."
+  PORT=3100
+  export PORT
+fi
 
 # --- Generate config.json if missing (replaces interactive `onboard` command) ---
 INSTANCE_DIR="${PAPERCLIP_HOME}/instances/${PAPERCLIP_INSTANCE_ID:-default}"
 CONFIG_FILE="${PAPERCLIP_CONFIG:-${INSTANCE_DIR}/config.json}"
+export PAPERCLIP_CONFIG="${CONFIG_FILE}"
 if [ ! -f "${CONFIG_FILE}" ]; then
   mkdir -p "$(dirname "${CONFIG_FILE}")"
   cat > "${CONFIG_FILE}" <<CONF
