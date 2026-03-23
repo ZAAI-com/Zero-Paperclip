@@ -31,12 +31,14 @@ RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest
 RUN npm install --global --omit=dev @openai/codex@latest
 RUN npm install --global --omit=dev opencode-ai@latest
 RUN npm install --global --omit=dev @google/gemini-cli
-# Cursor Agent CLI: install via official script, copy binary to system PATH
+# Cursor Agent CLI: install via official script to /opt, symlink into PATH
+# The installer creates a versioned directory with the binary + index.js + native modules;
+# all files must stay together for the binary to work.
 # Ref: https://cursor.com/docs/cli/installation
 RUN export HOME=/tmp \
   && curl https://cursor.com/install -fsS | bash \
-  && cp /tmp/.local/bin/agent /usr/local/bin/agent \
-  && chmod 755 /usr/local/bin/agent \
+  && mv /tmp/.local/share/cursor-agent /opt/cursor-agent \
+  && ln -s "$(ls -d /opt/cursor-agent/versions/*/cursor-agent)" /usr/local/bin/agent \
   && rm -rf /tmp/.local /tmp/.cursor
 
 # Add our entrypoint wrapper
