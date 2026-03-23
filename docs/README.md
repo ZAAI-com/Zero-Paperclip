@@ -10,7 +10,9 @@ A wrapper around Paperclip that auto-generates auth secrets and sets Synology-fr
 
 1. **Pull** `zaaicom/paperclip-synology:latest` from the Registry
 2. **Create container** — set port `3100:3100` and mount volume `/volume1/docker/paperclip` → `/paperclip-workspace`
-3. **Start** the container and open `http://<NAS_IP>:3100`
+3. **Start** the container
+4. **First run only** — check `docker logs` for the admin invite URL (or find it at `/volume1/docker/paperclip/paperclip-home/.bootstrap-url`)
+5. Open `http://<NAS_IP>:3100` and use the invite URL to create your admin account
 
 ## Deployment Mode
 
