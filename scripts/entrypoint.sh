@@ -49,24 +49,6 @@ CONF
   echo "[paperclip-synology] Generated config at ${CONFIG_FILE}"
 fi
 
-# --- Auto-bootstrap admin on first run ---
-# Runs in the background: waits for the server to be healthy, then creates
-# the first admin invite URL. The URL is saved to disk and logged.
-BOOTSTRAP_MARKER="${PAPERCLIP_HOME}/.bootstrapped"
-if [ ! -f "${BOOTSTRAP_MARKER}" ]; then
-  (
-    echo "[paperclip-synology] Waiting for server to become healthy..."
-    until curl -sf "http://localhost:${PORT}/api/health" > /dev/null 2>&1; do
-      sleep 2
-    done
-    echo "[paperclip-synology] Bootstrapping admin..."
-    BOOTSTRAP_OUTPUT="$(paperclipai auth bootstrap-ceo 2>&1)" || true
-    echo "${BOOTSTRAP_OUTPUT}" > "${PAPERCLIP_HOME}/.bootstrap-url"
-    touch "${BOOTSTRAP_MARKER}"
-    echo "[paperclip-synology] ${BOOTSTRAP_OUTPUT}"
-    echo "[paperclip-synology] Invite URL saved to ${PAPERCLIP_HOME}/.bootstrap-url"
-  ) &
-fi
-
 # --- Start the Paperclip server ---
+# paperclipai run handles bootstrap CEO invite generation automatically.
 exec paperclipai run
