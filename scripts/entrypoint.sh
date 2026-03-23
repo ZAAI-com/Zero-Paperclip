@@ -27,6 +27,22 @@ else
   echo "[paperclip-synology] Generated and persisted new auth secret."
 fi
 
+# --- PAPERCLIP_AGENT_JWT_SECRET management ---
+AGENT_JWT_FILE="${PAPERCLIP_HOME}/.agent_jwt_secret"
+if [ -n "${PAPERCLIP_AGENT_JWT_SECRET}" ]; then
+  :
+elif [ -f "${AGENT_JWT_FILE}" ]; then
+  PAPERCLIP_AGENT_JWT_SECRET="$(cat "${AGENT_JWT_FILE}")"
+  export PAPERCLIP_AGENT_JWT_SECRET
+  echo "[paperclip-synology] Using persisted agent JWT secret."
+else
+  PAPERCLIP_AGENT_JWT_SECRET="$(openssl rand -hex 32)"
+  echo "${PAPERCLIP_AGENT_JWT_SECRET}" > "${AGENT_JWT_FILE}"
+  chmod 600 "${AGENT_JWT_FILE}"
+  export PAPERCLIP_AGENT_JWT_SECRET
+  echo "[paperclip-synology] Generated and persisted new agent JWT secret."
+fi
+
 # --- Synology-friendly defaults (only set if not already defined) ---
 export SERVE_UI="${SERVE_UI:-true}"
 export PORT="${PORT:-3100}"
