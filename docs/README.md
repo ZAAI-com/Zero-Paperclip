@@ -14,11 +14,13 @@ A wrapper around Paperclip that auto-generates auth secrets and sets Synology-fr
 
 ## Optional Environment Variables
 
-| Variable | Description | Default |
+| Variable | Default | Description |
 |---|---|---|
-| `BETTER_AUTH_SECRET` | Override the auto-generated auth secret | Auto-generated and persisted |
-| `PAPERCLIP_PUBLIC_URL` | Set to your NAS IP/domain for external access | `http://localhost:3100` |
-| `DATABASE_URL` | Connect to an external Postgres instead of embedded | Embedded database |
+| `PAPERCLIP_DEPLOYMENT_MODE` | `authenticated` | `authenticated` requires login (admin bootstrapped automatically on first run). `local` disables auth entirely — anyone with access can use it |
+| `PAPERCLIP_DEPLOYMENT_EXPOSURE` | `private` | `private` for LAN/VPN (lenient origin checks). `public` for internet-facing (enforces origin validation, hostname allowlist, and requires `PAPERCLIP_PUBLIC_URL`) |
+| `PAPERCLIP_PUBLIC_URL` | Auto-detected | Your NAS address, e.g. `http://192.168.1.50:3100`. Required when exposure is `public`. In `private` mode it is auto-detected |
+| `BETTER_AUTH_SECRET` | Auto-generated and persisted | Override the auto-generated auth secret |
+| `DATABASE_URL` | Embedded database | Connect to an external Postgres instead of embedded |
 
 ## How Updates Work
 
