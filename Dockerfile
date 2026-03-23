@@ -54,9 +54,7 @@ ENV NODE_ENV=production \
   SERVE_UI=true \
   PAPERCLIP_HOME=/paperclip-workspace/paperclip-home \
   PAPERCLIP_INSTANCE_ID=default \
-  PAPERCLIP_CONFIG=/paperclip-workspace/paperclip-home/instances/default/config.json \
-  PAPERCLIP_DEPLOYMENT_MODE=authenticated \
-  PAPERCLIP_DEPLOYMENT_EXPOSURE=private
+  PAPERCLIP_CONFIG=/paperclip-workspace/paperclip-home/instances/default/config.json
 
 VOLUME ["/paperclip-workspace"]
 EXPOSE 3100

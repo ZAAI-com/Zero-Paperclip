@@ -12,13 +12,22 @@ A wrapper around Paperclip that auto-generates auth secrets and sets Synology-fr
 2. **Create container** — set port `3100:3100` and mount volume `/volume1/docker/paperclip` → `/paperclip-workspace`
 3. **Start** the container and open `http://<NAS_IP>:3100`
 
+## Deployment Mode
+
+This image runs in **authenticated** mode with **private** exposure. An admin account is bootstrapped automatically on first run — check `docker logs` for the invite URL.
+
+Paperclip supports two deployment modes and two exposure levels:
+
+| Setting | Value | Description | Alternative | Why not supported |
+|---|---|---|---|---|
+| `PAPERCLIP_DEPLOYMENT_MODE` | `authenticated` | Requires login, admin bootstrapped on first run | `local_trusted` — no auth | Binds to `127.0.0.1` only, unreachable from outside the container |
+| `PAPERCLIP_DEPLOYMENT_EXPOSURE` | `private` | LAN/VPN, lenient origin checks | `public` — strict origin/hostname validation | Synology NAS typically runs on a home or office network |
+
 ## Optional Environment Variables
 
 | Variable | Default | Description |
 |---|---|---|
-| `PAPERCLIP_DEPLOYMENT_MODE` | `authenticated` | `authenticated` requires login (admin bootstrapped automatically on first run). `local` disables auth entirely — anyone with access can use it |
-| `PAPERCLIP_DEPLOYMENT_EXPOSURE` | `private` | `private` for LAN/VPN (lenient origin checks). `public` for internet-facing (enforces origin validation, hostname allowlist, and requires `PAPERCLIP_PUBLIC_URL`) |
-| `PAPERCLIP_PUBLIC_URL` | Auto-detected | Your NAS address, e.g. `http://192.168.1.50:3100`. Required when exposure is `public`. In `private` mode it is auto-detected |
+| `PAPERCLIP_PUBLIC_URL` | Auto-detected | Your NAS address, e.g. `http://192.168.1.50:3100`. Set this if accessing from other devices on your network |
 | `BETTER_AUTH_SECRET` | Auto-generated and persisted | Override the auto-generated auth secret |
 | `DATABASE_URL` | Embedded database | Connect to an external Postgres instead of embedded |
 
