@@ -5,6 +5,8 @@
 set -e
 
 PAPERCLIP_HOME="${PAPERCLIP_HOME:-/paperclip-workspace/paperclip-home}"
+mkdir -p "${HOME}"
+mkdir -p "${PAPERCLIP_HOME}"
 SECRET_FILE="${PAPERCLIP_HOME}/.auth_secret"
 
 # --- BETTER_AUTH_SECRET management ---
