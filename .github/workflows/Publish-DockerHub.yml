@@ -1,0 +1,76 @@
+# Publish-DockerHub.yml — Build multi-arch Docker image and push to Docker Hub.
+# Triggers on push to main, weekly (picks up upstream Paperclip updates),
+# and manual dispatch.
+
+name: Publish DockerHub
+
+concurrency:
+  group: docker-publish
+  cancel-in-progress: true
+
+on:
+  push:
+    branches: [main]
+  schedule:
+    # Every Wednesday at 16:00 Munich time (14:00 UTC) — rebuilds to pick up upstream changes
+    - cron: "0 14 * * 3"
+  workflow_dispatch:
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Set up QEMU (for multi-arch builds)
+        uses: docker/setup-qemu-action@v3
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Log in to Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Read bundle version
+        id: bundle
+        run: echo "version=$(tr -d '[:space:]' < VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Get latest Paperclip version from npm
+        id: paperclip
+        run: |
+          ver="$(npm view paperclipai version)"
+          if [[ -z "$ver" || ! "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "::error::Failed to resolve paperclipai version from npm"
+            exit 1
+          fi
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: check
+        run: |
+          TAG="${{ steps.bundle.outputs.version }}-${{ steps.paperclip.outputs.version }}"
+          if docker manifest inspect "zaaicom/paperclip-synology:$TAG" > /dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Tag $TAG already exists, skipping build"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
+
+      - name: Build and push
+        if: steps.check.outputs.skip != 'true'
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          push: true
+          platforms: linux/amd64,linux/arm64
+          build-args: |
+            BUNDLE_VERSION=${{ steps.bundle.outputs.version }}
+            PAPERCLIP_VERSION=${{ steps.paperclip.outputs.version }}
+          tags: |
+            zaaicom/paperclip-synology:latest
+            zaaicom/paperclip-synology:${{ steps.bundle.outputs.version }}-${{ steps.paperclip.outputs.version }}

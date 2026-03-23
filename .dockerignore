@@ -1,0 +1,7 @@
+.git
+.github
+.context
+docs
+LICENSE
+*.md
+.claude
