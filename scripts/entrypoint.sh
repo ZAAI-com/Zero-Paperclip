@@ -60,7 +60,7 @@ if [ ! -f "${BOOTSTRAP_MARKER}" ]; then
       sleep 2
     done
     echo "[paperclip-synology] Bootstrapping admin..."
-    BOOTSTRAP_OUTPUT="$(pnpm paperclipai auth bootstrap-ceo 2>&1)" || true
+    BOOTSTRAP_OUTPUT="$(paperclipai auth bootstrap-ceo 2>&1)" || true
     echo "${BOOTSTRAP_OUTPUT}" > "${PAPERCLIP_HOME}/.bootstrap-url"
     touch "${BOOTSTRAP_MARKER}"
     echo "[paperclip-synology] ${BOOTSTRAP_OUTPUT}"
@@ -69,4 +69,4 @@ if [ ! -f "${BOOTSTRAP_MARKER}" ]; then
 fi
 
 # --- Start the Paperclip server ---
-exec node --import ./server/node_modules/tsx/dist/loader.mjs server/dist/index.js
+exec paperclipai run

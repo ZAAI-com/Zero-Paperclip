@@ -1,40 +1,19 @@
 # Dockerfile — zaaicom/paperclip-synology
-# Builds Paperclip from source and wraps it with a zero-config entrypoint
+# Installs Paperclip from npm and wraps it with a zero-config entrypoint
 # that auto-generates auth secrets for Synology NAS deployments.
 
-# ── Stage 1: Build Paperclip from source ─────────────────────────────
-FROM node:lts-trixie-slim AS upstream-build
-
-RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl git openssl \
-  && rm -rf /var/lib/apt/lists/*
-RUN corepack enable
-
-WORKDIR /build
-RUN git clone --depth 1 https://github.com/paperclipai/paperclip.git .
-
-# Install dependencies
-RUN pnpm install --frozen-lockfile
-
-# Build UI and server (... suffix builds all workspace dependencies first)
-RUN pnpm --filter @paperclipai/ui... build
-RUN pnpm --filter @paperclipai/server... build
-RUN test -f server/dist/index.js || (echo "ERROR: server build output missing" && exit 1)
-
-# ── Stage 2: Production image ────────────────────────────────────────
-FROM node:lts-trixie-slim AS production
+FROM node:lts-trixie-slim
 
 # openssl is required at runtime for secret generation in entrypoint.sh
 # locales is required for embedded PostgreSQL (needs en_US.UTF-8)
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl git openssl locales tzdata \
+  && apt-get install -y --no-install-recommends ca-certificates curl openssl locales tzdata \
   && sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen \
   && locale-gen \
   && rm -rf /var/lib/apt/lists/*
-RUN corepack enable
 
-WORKDIR /app
-COPY --from=upstream-build /build /app
+# Install Paperclip from npm (stable release)
+RUN npm install --global --omit=dev paperclipai@latest
 
 # Prepare workspace directories
 RUN mkdir -p /paperclip-workspace/user-home /paperclip-workspace/paperclip-home \

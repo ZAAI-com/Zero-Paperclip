@@ -2,7 +2,7 @@
 # Triggers on push to main, weekly (picks up upstream Paperclip updates),
 # and manual dispatch.
 
-name: Build and Push Docker Image
+name: Publish DockerHub
 
 on:
   push:
