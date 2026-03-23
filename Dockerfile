@@ -29,9 +29,18 @@ RUN mkdir -p /paperclip-workspace/user-home /paperclip-workspace/paperclip-home 
 # Install global CLI tools
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest
 RUN npm install --global --omit=dev @openai/codex@latest
-RUN npm install --global --omit=dev opencode-ai
+RUN npm install --global --omit=dev opencode-ai@latest
 RUN npm install --global --omit=dev @google/gemini-cli
-RUN curl https://cursor.com/install -fsS | bash
+# Cursor CLI: only available for x86_64; install to a system-wide location accessible by the node user
+RUN if [ "$(uname -m)" = "x86_64" ]; then \
+      export HOME=/tmp \
+      && curl https://cursor.com/install -fsS | bash \
+      && if [ -f /tmp/.cursor/bin/cursor ]; then \
+           cp /tmp/.cursor/bin/cursor /usr/local/bin/cursor \
+           && chmod 755 /usr/local/bin/cursor; \
+         fi \
+      && rm -rf /tmp/.cursor; \
+    fi
 
 # Add our entrypoint wrapper
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh

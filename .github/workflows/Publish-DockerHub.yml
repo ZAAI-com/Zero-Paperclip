@@ -4,6 +4,10 @@
 
 name: Publish DockerHub
 
+concurrency:
+  group: docker-publish
+  cancel-in-progress: true
+
 on:
   push:
     branches: [main]
@@ -38,9 +42,27 @@ jobs:
 
       - name: Get latest Paperclip version from npm
         id: paperclip
-        run: echo "version=$(npm view paperclipai version)" >> "$GITHUB_OUTPUT"
+        run: |
+          ver="$(npm view paperclipai version)"
+          if [[ -z "$ver" || ! "$ver" =~ ^[0-9]+\.[0-9]+\.[0-9]+ ]]; then
+            echo "::error::Failed to resolve paperclipai version from npm"
+            exit 1
+          fi
+          echo "version=$ver" >> "$GITHUB_OUTPUT"
+
+      - name: Check if tag already exists
+        id: check
+        run: |
+          TAG="${{ steps.bundle.outputs.version }}-${{ steps.paperclip.outputs.version }}"
+          if docker manifest inspect "zaaicom/paperclip-synology:$TAG" > /dev/null 2>&1; then
+            echo "skip=true" >> "$GITHUB_OUTPUT"
+            echo "::notice::Tag $TAG already exists, skipping build"
+          else
+            echo "skip=false" >> "$GITHUB_OUTPUT"
+          fi
 
       - name: Build and push
+        if: steps.check.outputs.skip != 'true'
         uses: docker/build-push-action@v6
         with:
           context: .
