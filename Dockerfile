@@ -36,10 +36,16 @@ RUN corepack enable
 WORKDIR /app
 COPY --from=upstream-build /build /app
 
-# Install global CLI tools (same as upstream)
-RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest @openai/codex@latest opencode-ai \
-  && mkdir -p /paperclip-workspace/user-home /paperclip-workspace/paperclip-home \
+# Prepare workspace directories
+RUN mkdir -p /paperclip-workspace/user-home /paperclip-workspace/paperclip-home \
   && chown -R node:node /paperclip-workspace
+
+# Install global CLI tools
+RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest
+RUN npm install --global --omit=dev @openai/codex@latest
+RUN npm install --global --omit=dev opencode-ai
+RUN npm install --global --omit=dev @google/gemini-cli
+RUN curl https://cursor.com/install -fsS | bash
 
 # Add our entrypoint wrapper
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
