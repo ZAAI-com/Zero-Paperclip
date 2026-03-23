@@ -32,9 +32,13 @@ jobs:
           username: ${{ secrets.DOCKERHUB_USERNAME }}
           password: ${{ secrets.DOCKERHUB_TOKEN }}
 
-      - name: Generate date tag
-        id: date
-        run: echo "tag=$(date -u +%Y-%m-%d)" >> "$GITHUB_OUTPUT"
+      - name: Read bundle version
+        id: bundle
+        run: echo "version=$(cat VERSION)" >> "$GITHUB_OUTPUT"
+
+      - name: Get latest Paperclip version from npm
+        id: paperclip
+        run: echo "version=$(npm view paperclipai version)" >> "$GITHUB_OUTPUT"
 
       - name: Build and push
         uses: docker/build-push-action@v6
@@ -42,6 +46,9 @@ jobs:
           context: .
           push: true
           platforms: linux/amd64,linux/arm64
+          build-args: |
+            BUNDLE_VERSION=${{ steps.bundle.outputs.version }}
+            PAPERCLIP_VERSION=${{ steps.paperclip.outputs.version }}
           tags: |
             zaaicom/paperclip-synology:latest
-            zaaicom/paperclip-synology:${{ steps.date.outputs.tag }}
+            zaaicom/paperclip-synology:${{ steps.bundle.outputs.version }}-${{ steps.paperclip.outputs.version }}

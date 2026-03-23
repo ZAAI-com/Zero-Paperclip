@@ -4,6 +4,12 @@
 
 FROM node:lts-trixie-slim
 
+ARG BUNDLE_VERSION
+ARG PAPERCLIP_VERSION
+LABEL org.opencontainers.image.version="${BUNDLE_VERSION}-${PAPERCLIP_VERSION}" \
+      com.zaai.bundle-version="${BUNDLE_VERSION}" \
+      com.zaai.paperclip-version="${PAPERCLIP_VERSION}"
+
 # openssl is required at runtime for secret generation in entrypoint.sh
 # locales is required for embedded PostgreSQL (needs en_US.UTF-8)
 RUN apt-get update \
