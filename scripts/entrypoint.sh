@@ -91,19 +91,41 @@ echo "[paperclip-synology] Working directory: ${PAPERCLIP_WORKING_DIR}"
 chown node:node /paperclip-workspace
 chown -R node:node "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
 
-# --- Register allowed hostnames ---
+# --- Register allowed hostnames (background, after server is ready) ---
+# Hostname registration requires the database, which is started by `paperclipai run`.
+# A background subshell waits for the server to be ready, then registers hostnames.
 # Runs on every start so users can add hostnames without recreating the container.
 # PAPERCLIP_ALLOWED_HOSTNAMES is a comma-separated list (e.g., "localhost,10.0.0.10,nas.local").
 PAPERCLIP_ALLOWED_HOSTNAMES="${PAPERCLIP_ALLOWED_HOSTNAMES:-localhost,DiskStation.local,RackStation.local,10.0.0.2,10.0.0.10,192.168.0.2,192.168.0.10,192.168.1.2,192.168.1.10,192.168.2.2,192.168.2.10,192.168.178.2,192.168.178.10}"
-IFS=',' read -ra HOSTNAMES <<< "${PAPERCLIP_ALLOWED_HOSTNAMES}"
-for RAW_HOST in "${HOSTNAMES[@]}"; do
-  ALLOWED_HOST="$(echo "${RAW_HOST}" | xargs)"
-  if [ -n "${ALLOWED_HOST}" ]; then
-    echo "[paperclip-synology] Registering allowed hostname: ${ALLOWED_HOST}"
-    gosu node paperclipai allowed-hostname "${ALLOWED_HOST}" \
-      || echo "[paperclip-synology] Warning: Failed to register hostname: ${ALLOWED_HOST}"
-  fi
-done
+(
+  MAX_ATTEMPTS=90
+  POLL_INTERVAL=2
+  ATTEMPT=0
+
+  echo "[paperclip-synology] Waiting for server to be ready before registering hostnames..."
+
+  while [ "${ATTEMPT}" -lt "${MAX_ATTEMPTS}" ]; do
+    if curl -sf -o /dev/null "http://localhost:${PORT}" 2>/dev/null; then
+      echo "[paperclip-synology] Server is ready. Registering allowed hostnames..."
+      IFS=',' read -ra HOSTNAMES <<< "${PAPERCLIP_ALLOWED_HOSTNAMES}"
+      for RAW_HOST in "${HOSTNAMES[@]}"; do
+        ALLOWED_HOST="$(echo "${RAW_HOST}" | xargs)"
+        if [ -n "${ALLOWED_HOST}" ]; then
+          if gosu node paperclipai allowed-hostname "${ALLOWED_HOST}"; then
+            echo "[paperclip-synology] Registered allowed hostname: ${ALLOWED_HOST}"
+          else
+            echo "[paperclip-synology] Warning: Failed to register hostname: ${ALLOWED_HOST}"
+          fi
+        fi
+      done
+      exit 0
+    fi
+    ATTEMPT=$((ATTEMPT + 1))
+    sleep "${POLL_INTERVAL}"
+  done
+
+  echo "[paperclip-synology] Warning: Server did not become ready within $((MAX_ATTEMPTS * POLL_INTERVAL))s. Hostname registration skipped."
+) &
 
 # --- Start the Paperclip server ---
 # paperclipai run handles bootstrap CEO invite generation automatically.
