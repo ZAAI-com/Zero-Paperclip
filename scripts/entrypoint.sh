@@ -9,6 +9,23 @@ PAPERCLIP_WORKING_DIR="/paperclip-workspace/paperclip-working"
 mkdir -p "${HOME}"
 mkdir -p "${PAPERCLIP_HOME}"
 mkdir -p "${PAPERCLIP_WORKING_DIR}"
+
+# --- Symlink ~/.paperclip to the persistent volume ---
+# Paperclip resolves ~/.paperclip via os.userInfo().homedir (/home/node from /etc/passwd)
+# rather than $HOME. Without this, embedded Postgres data is ephemeral.
+if [ -d /home/node/.paperclip ] && [ ! -L /home/node/.paperclip ]; then
+  if [ "$(ls -A /home/node/.paperclip 2>/dev/null)" ] && [ ! "$(ls -A "${PAPERCLIP_HOME}" 2>/dev/null)" ]; then
+    echo "[paperclip-synology] Migrating existing ~/.paperclip contents to persistent volume at ${PAPERCLIP_HOME}"
+    mv /home/node/.paperclip/* "${PAPERCLIP_HOME}/" 2>/dev/null || true
+    mv /home/node/.paperclip/.[!.]* "${PAPERCLIP_HOME}/" 2>/dev/null || true
+    mv /home/node/.paperclip/..?* "${PAPERCLIP_HOME}/" 2>/dev/null || true
+  else
+    echo "[paperclip-synology] Removing ephemeral ~/.paperclip directory before linking to persistent volume"
+  fi
+  rm -rf /home/node/.paperclip
+fi
+ln -sfn "${PAPERCLIP_HOME}" /home/node/.paperclip
+
 SECRET_FILE="${PAPERCLIP_HOME}/.auth_secret"
 
 # --- BETTER_AUTH_SECRET management ---
@@ -21,16 +38,14 @@ elif [ -f "${SECRET_FILE}" ]; then
   if [ -z "${BETTER_AUTH_SECRET}" ]; then
     echo "[paperclip-synology] Warning: Persisted auth secret is empty, regenerating..."
     BETTER_AUTH_SECRET="$(openssl rand -hex 32)"
-    echo "${BETTER_AUTH_SECRET}" > "${SECRET_FILE}"
-    chmod 600 "${SECRET_FILE}"
+    (umask 077; echo "${BETTER_AUTH_SECRET}" > "${SECRET_FILE}")
   fi
   export BETTER_AUTH_SECRET
   echo "[paperclip-synology] Using persisted auth secret."
 else
   # First run — generate a new secret and persist it.
   BETTER_AUTH_SECRET="$(openssl rand -hex 32)"
-  echo "${BETTER_AUTH_SECRET}" > "${SECRET_FILE}"
-  chmod 600 "${SECRET_FILE}"
+  (umask 077; echo "${BETTER_AUTH_SECRET}" > "${SECRET_FILE}")
   export BETTER_AUTH_SECRET
   echo "[paperclip-synology] Generated and persisted new auth secret."
 fi
@@ -44,15 +59,13 @@ elif [ -f "${AGENT_JWT_FILE}" ]; then
   if [ -z "${PAPERCLIP_AGENT_JWT_SECRET}" ]; then
     echo "[paperclip-synology] Warning: Persisted agent JWT secret is empty, regenerating..."
     PAPERCLIP_AGENT_JWT_SECRET="$(openssl rand -hex 32)"
-    echo "${PAPERCLIP_AGENT_JWT_SECRET}" > "${AGENT_JWT_FILE}"
-    chmod 600 "${AGENT_JWT_FILE}"
+    (umask 077; echo "${PAPERCLIP_AGENT_JWT_SECRET}" > "${AGENT_JWT_FILE}")
   fi
   export PAPERCLIP_AGENT_JWT_SECRET
   echo "[paperclip-synology] Using persisted agent JWT secret."
 else
   PAPERCLIP_AGENT_JWT_SECRET="$(openssl rand -hex 32)"
-  echo "${PAPERCLIP_AGENT_JWT_SECRET}" > "${AGENT_JWT_FILE}"
-  chmod 600 "${AGENT_JWT_FILE}"
+  (umask 077; echo "${PAPERCLIP_AGENT_JWT_SECRET}" > "${AGENT_JWT_FILE}")
   export PAPERCLIP_AGENT_JWT_SECRET
   echo "[paperclip-synology] Generated and persisted new agent JWT secret."
 fi
@@ -66,13 +79,22 @@ if ! echo "${PORT}" | grep -qE '^[0-9]+$'; then
   export PORT
 fi
 
+# --- PAPERCLIP_PUBLIC_URL default ---
+# Paperclip uses this to determine cookie security: URLs starting with http:// disable
+# the Secure flag, allowing sessions to work over plain HTTP (typical for NAS LAN access).
+# Without this, cookies default to Secure, which browsers refuse to send over HTTP → 401.
+if [ -z "${PAPERCLIP_PUBLIC_URL}" ]; then
+  export PAPERCLIP_PUBLIC_URL="http://localhost:${PORT}"
+  echo "[paperclip-synology] PAPERCLIP_PUBLIC_URL defaulting to: ${PAPERCLIP_PUBLIC_URL}"
+fi
+
 # --- Generate config.json if missing (replaces interactive `onboard` command) ---
 INSTANCE_DIR="${PAPERCLIP_HOME}/instances/${PAPERCLIP_INSTANCE_ID:-default}"
 CONFIG_FILE="${PAPERCLIP_CONFIG:-${INSTANCE_DIR}/config.json}"
 export PAPERCLIP_CONFIG="${CONFIG_FILE}"
 if [ ! -f "${CONFIG_FILE}" ]; then
   mkdir -p "$(dirname "${CONFIG_FILE}")"
-  cat > "${CONFIG_FILE}" <<CONF
+  (umask 077; cat > "${CONFIG_FILE}" <<CONF
 {
   "\$meta": { "version": 1, "updatedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)", "source": "onboard" },
   "database": { "mode": "embedded-postgres" },
@@ -81,7 +103,7 @@ if [ ! -f "${CONFIG_FILE}" ]; then
   "auth": { "baseUrlMode": "auto" }
 }
 CONF
-  chmod 600 "${CONFIG_FILE}"
+  )
   echo "[paperclip-synology] Generated config at ${CONFIG_FILE}"
 fi
 
@@ -90,13 +112,21 @@ echo "[paperclip-synology] Working directory: ${PAPERCLIP_WORKING_DIR}"
 # --- Fix volume ownership (required for Docker-mounted volumes on Synology) ---
 chown node:node /paperclip-workspace
 chown -R node:node "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
+chown -h node:node /home/node/.paperclip
 
 # --- Register allowed hostnames (background, after server is ready) ---
 # Hostname registration requires the database, which is started by `paperclipai run`.
 # A background subshell waits for the server to be ready, then registers hostnames.
 # Runs on every start so users can add hostnames without recreating the container.
 # PAPERCLIP_ALLOWED_HOSTNAMES is a comma-separated list (e.g., "localhost,10.0.0.10,nas.local").
-PAPERCLIP_ALLOWED_HOSTNAMES="${PAPERCLIP_ALLOWED_HOSTNAMES:-localhost,DiskStation.local,RackStation.local,10.0.0.2,10.0.0.10,192.168.0.2,192.168.0.10,192.168.1.2,192.168.1.10,192.168.2.2,192.168.2.10,192.168.178.2,192.168.178.10}"
+# Always auto-detect hostnames, then merge with any user-provided ones
+DETECTED_HOSTNAMES="$(/usr/local/bin/detect-hostnames.sh)"
+if [ -n "${PAPERCLIP_ALLOWED_HOSTNAMES}" ]; then
+  echo "[paperclip-synology] Merging user-provided hostnames: ${PAPERCLIP_ALLOWED_HOSTNAMES}"
+  PAPERCLIP_ALLOWED_HOSTNAMES="${DETECTED_HOSTNAMES},${PAPERCLIP_ALLOWED_HOSTNAMES}"
+else
+  PAPERCLIP_ALLOWED_HOSTNAMES="${DETECTED_HOSTNAMES}"
+fi
 (
   MAX_ATTEMPTS=90
   POLL_INTERVAL=2
@@ -106,7 +136,7 @@ PAPERCLIP_ALLOWED_HOSTNAMES="${PAPERCLIP_ALLOWED_HOSTNAMES:-localhost,DiskStatio
 
   while [ "${ATTEMPT}" -lt "${MAX_ATTEMPTS}" ]; do
     if curl -sf -o /dev/null "http://localhost:${PORT}" 2>/dev/null; then
-      echo "[paperclip-synology] Server is ready. Registering allowed hostnames..."
+      echo "[paperclip-synology] Server is ready. Registering allowed hostnames: ${PAPERCLIP_ALLOWED_HOSTNAMES}"
       IFS=',' read -ra HOSTNAMES <<< "${PAPERCLIP_ALLOWED_HOSTNAMES}"
       for RAW_HOST in "${HOSTNAMES[@]}"; do
         ALLOWED_HOST="$(echo "${RAW_HOST}" | xargs)"
@@ -129,5 +159,26 @@ PAPERCLIP_ALLOWED_HOSTNAMES="${PAPERCLIP_ALLOWED_HOSTNAMES:-localhost,DiskStatio
 
 # --- Start the Paperclip server ---
 # paperclipai run handles bootstrap CEO invite generation automatically.
-# gosu drops from root to node user; exec replaces PID for proper signal handling.
-exec gosu node paperclipai run
+# gosu drops from root to node user. We use trap+wait instead of exec so we can
+# log shutdown signals for diagnostics (e.g., unexpected SIGTERM on Synology).
+cleanup() {
+  echo "[paperclip-synology] Received shutdown signal."
+  if [ -n "${PAPERCLIP_PID:-}" ]; then
+    if kill -0 "${PAPERCLIP_PID}" 2>/dev/null; then
+      echo "[paperclip-synology] Forwarding SIGTERM to Paperclip (PID ${PAPERCLIP_PID})..."
+      kill -TERM "${PAPERCLIP_PID}" 2>/dev/null || true
+    fi
+    wait "${PAPERCLIP_PID}" && EXIT_CODE=$? || EXIT_CODE=$?
+  else
+    EXIT_CODE=0
+  fi
+  echo "[paperclip-synology] Paperclip exited with code ${EXIT_CODE}"
+  exit ${EXIT_CODE}
+}
+
+gosu node paperclipai run &
+PAPERCLIP_PID=$!
+trap cleanup SIGTERM SIGINT
+wait "${PAPERCLIP_PID}" && EXIT_CODE=$? || EXIT_CODE=$?
+echo "[paperclip-synology] Paperclip process exited with code ${EXIT_CODE}"
+exit ${EXIT_CODE}

@@ -22,6 +22,7 @@ RUN apt-get update \
 # Install Paperclip from npm (stable release)
 RUN PAPERCLIP_VERSION=${PAPERCLIP_VERSION:-$(npm view paperclipai version)} \
   && npm install --global --omit=dev paperclipai@${PAPERCLIP_VERSION}
+RUN paperclipai --version
 
 # Prepare workspace directories
 RUN mkdir -p /paperclip-workspace/user-home
@@ -31,9 +32,15 @@ RUN chown -R node:node /paperclip-workspace
 
 # Install global CLI tools
 RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest
+RUN claude --version
 RUN npm install --global --omit=dev @openai/codex@latest
+RUN codex --version
 RUN npm install --global --omit=dev opencode-ai@latest
+RUN opencode --version
 RUN npm install --global --omit=dev @google/gemini-cli
+RUN gemini --version
+RUN npm install --global --omit=dev @github/copilot@latest
+RUN copilot --version
 # Cursor Agent CLI: install via official script to /opt, symlink into PATH
 # The installer creates a versioned directory with the binary + index.js + native modules;
 # all files must stay together for the binary to work.
@@ -43,11 +50,13 @@ RUN export HOME=/tmp \
   && mv /tmp/.local/share/cursor-agent /opt/cursor-agent \
   && ln -s "$(ls -d /opt/cursor-agent/versions/*/cursor-agent)" /usr/local/bin/agent \
   && rm -rf /tmp/.local /tmp/.cursor
+RUN agent --version
 
-# Add our entrypoint wrapper
+# Add our scripts
+COPY scripts/detect-hostnames.sh /usr/local/bin/detect-hostnames.sh
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh \
-  && chown node:node /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/detect-hostnames.sh /usr/local/bin/entrypoint.sh \
+  && chown node:node /usr/local/bin/detect-hostnames.sh /usr/local/bin/entrypoint.sh
 
 ENV NODE_ENV=production \
   TZ=Europe/Berlin \
@@ -57,8 +66,7 @@ ENV NODE_ENV=production \
   SERVE_UI=true \
   PAPERCLIP_HOME=/paperclip-workspace/paperclip-home \
   PAPERCLIP_INSTANCE_ID=default \
-  PAPERCLIP_CONFIG=/paperclip-workspace/paperclip-home/instances/default/config.json \
-  PAPERCLIP_ALLOWED_HOSTNAMES=localhost,DiskStation.local,RackStation.local,10.0.0.2,10.0.0.10,192.168.0.2,192.168.0.10,192.168.1.2,192.168.1.10,192.168.2.2,192.168.2.10,192.168.178.2,192.168.178.10
+  PAPERCLIP_CONFIG=/paperclip-workspace/paperclip-home/instances/default/config.json
 
 VOLUME ["/paperclip-workspace"]
 EXPOSE 3100

@@ -35,11 +35,13 @@ Paperclip supports two deployment modes and two exposure levels:
 
 ## Allowed Hostnames
 
-If you see **"Hostname 'x.x.x.x' is not allowed"** when accessing Paperclip via your NAS IP, set the `PAPERCLIP_ALLOWED_HOSTNAMES` environment variable:
+Paperclip's private deployment mode validates the `Host` header of every request against an allowlist. On every start, the container auto-detects `localhost` and all container IPs (via `hostname -I`). If you set `PAPERCLIP_PUBLIC_URL`, its hostname is also added automatically.
 
-    PAPERCLIP_ALLOWED_HOSTNAMES=localhost,10.0.0.10
+If you access from other devices on your network and see **"Hostname 'x.x.x.x' is not allowed"**, set `PAPERCLIP_ALLOWED_HOSTNAMES` with your NAS IP or hostname:
 
-Replace `10.0.0.10` with your NAS LAN IP. Multiple hostnames can be comma-separated. This is applied on every container start, so you can add new hostnames by updating the variable and restarting.
+    PAPERCLIP_ALLOWED_HOSTNAMES=192.168.1.50,nas.local
+
+These are **merged** with the auto-detected hostnames, so you only need to list additional ones. This is applied on every container start, so you can add new hostnames by updating the variable and restarting.
 
 ## Bundled CLI Tools
 
@@ -49,6 +51,7 @@ This image includes the following coding agent CLI tools, ready to use with Pape
 - **Codex** (`@openai/codex`)
 - **OpenCode** (`opencode-ai`)
 - **Gemini CLI** (`@google/gemini-cli`)
+- **GitHub Copilot CLI** (`@github/copilot`)
 - **Cursor Agent CLI** (installed via `cursor.com/install`, available as `agent`)
 
 No additional setup is required. Paperclip uses these tools automatically when running coding agent tasks. Each tool requires its own API key, configured through the Paperclip UI.
@@ -57,8 +60,8 @@ No additional setup is required. Paperclip uses these tools automatically when r
 
 | Variable | Default | Description |
 |---|---|---|
-| `PAPERCLIP_ALLOWED_HOSTNAMES` | `localhost` | Comma-separated hostnames allowed to access this instance, e.g. `localhost,10.0.0.10,nas.local` |
-| `PAPERCLIP_PUBLIC_URL` | Auto-detected | Your NAS address, e.g. `http://192.168.1.50:3100`. Set this if accessing from other devices on your network |
+| `PAPERCLIP_ALLOWED_HOSTNAMES` | Auto-detected | Additional hostnames for private mode (merged with auto-detected IPs). Comma-separated, e.g. `192.168.1.50,nas.local` |
+| `PAPERCLIP_PUBLIC_URL` | `http://localhost:3100` | Your NAS address for network access. **Set this to your NAS LAN IP** (e.g. `http://192.168.1.50:3100`) if accessing from other devices |
 | `BETTER_AUTH_SECRET` | Auto-generated and persisted | Override the auto-generated session auth secret |
 | `PAPERCLIP_AGENT_JWT_SECRET` | Auto-generated and persisted | Override the auto-generated JWT secret for coding agents |
 | `DATABASE_URL` | Embedded database | Connect to an external Postgres instead of embedded |
@@ -87,6 +90,16 @@ This image is rebuilt weekly from the latest Paperclip npm release. To update:
 2. **Reset** the container in Container Manager
 
 Your data in `/paperclip-workspace` is preserved across updates.
+
+## Troubleshooting
+
+### Container stops unexpectedly (database shutdown errors)
+
+If you see `the database system is shutting down` in logs, something sent a stop signal to the container. Check:
+
+1. **Memory limit** — In Container Manager > Container > Settings > Resources, ensure at least **2 GB RAM**. "Unlimited" is recommended.
+2. **OOM kill** — Run `docker inspect <container-id> | grep OOMKilled` on the NAS via SSH.
+3. **Synology Resource Monitor** — Check for high memory usage around the time of the crash.
 
 ## License
 

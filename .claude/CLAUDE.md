@@ -11,6 +11,7 @@ Zero-config Docker image wrapper for [Paperclip](https://github.com/paperclipai/
 ```
 Dockerfile                              # Multi-arch Docker image (node:lts-trixie-slim base)
 scripts/entrypoint.sh                   # Auth secrets management, config generation, server start
+scripts/detect-hostnames.sh             # Auto-detect container IPs for private hostname guard
 .github/workflows/Publish-DockerHub.yml # CI/CD: multi-arch build, Docker Hub publish
 docs/README.md                          # User-facing documentation
 VERSION                                 # Bundle version (bump for wrapper changes)
@@ -44,7 +45,7 @@ No unit tests, linters, or formatters are configured. Verification is done by bu
 - UPPERCASE for all variable names: `PAPERCLIP_HOME`, `SECRET_FILE`, `CONFIG_FILE`
 - Always double-quote variable expansions: `"${VAR}"`
 - Log prefix: `echo "[paperclip-synology] ..."` for all user-facing messages
-- Use `exec` for the final server process (replaces shell, proper signal handling)
+- Use `trap`/`wait` for the final server process (forward signals to the background child for graceful shutdown)
 
 ### Dockerfile
 - Descriptive comment at the top explaining the image purpose
@@ -66,7 +67,7 @@ No unit tests, linters, or formatters are configured. Verification is done by bu
 4. **Auto-generated auth secrets:** `BETTER_AUTH_SECRET` and `PAPERCLIP_AGENT_JWT_SECRET` each generated on first run via `openssl rand -hex 32`, persisted to disk (`.auth_secret` and `.agent_jwt_secret` respectively). Survive container restarts.
 5. **Composite versioning:** Docker tags follow `<bundle-version>-<paperclip-version>` (e.g., `1.0.0-1.2.3`). `VERSION` file tracks the wrapper; Paperclip version queried from npm at CI build time.
 6. **Weekly CI rebuilds:** GitHub Actions runs every Wednesday to pick up new upstream Paperclip releases.
-7. **CLI tools bundled:** Image includes Claude Code, Codex, OpenCode, Gemini CLI, and Cursor Agent CLI for Paperclip's coding agent features.
+7. **CLI tools bundled:** Image includes Claude Code, Codex, OpenCode, Gemini CLI, GitHub Copilot CLI, and Cursor Agent CLI for Paperclip's coding agent features.
 8. **Auth base URL auto-detection:** Config uses `baseUrlMode: auto` so Paperclip resolves the auth base URL dynamically, avoiding hard-coded hostnames that break across different NAS network setups.
 
 ## Environment Variables
@@ -86,7 +87,7 @@ No unit tests, linters, or formatters are configured. Verification is done by bu
 | `PAPERCLIP_HOME` | `/paperclip-workspace/paperclip-home` | Dockerfile | Data directory |
 | `PAPERCLIP_INSTANCE_ID` | `default` | Dockerfile | Instance identifier |
 | `PAPERCLIP_CONFIG` | `.../instances/default/config.json` | Dockerfile | Config file path |
-| `PAPERCLIP_ALLOWED_HOSTNAMES` | `localhost` | Dockerfile + entrypoint | Comma-separated hostnames to register on startup |
+| `PAPERCLIP_ALLOWED_HOSTNAMES` | Auto-detected | detect-hostnames.sh | Additional comma-separated hostnames; merged with auto-detected IPs from `hostname -I` |
 
 ## Common Tasks
 
