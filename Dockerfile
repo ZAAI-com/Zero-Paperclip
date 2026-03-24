@@ -34,6 +34,7 @@ RUN npm install --global --omit=dev @anthropic-ai/claude-code@latest
 RUN npm install --global --omit=dev @openai/codex@latest
 RUN npm install --global --omit=dev opencode-ai@latest
 RUN npm install --global --omit=dev @google/gemini-cli
+RUN npm install --global --omit=dev @github/copilot@latest
 # Cursor Agent CLI: install via official script to /opt, symlink into PATH
 # The installer creates a versioned directory with the binary + index.js + native modules;
 # all files must stay together for the binary to work.

@@ -67,7 +67,7 @@ No unit tests, linters, or formatters are configured. Verification is done by bu
 4. **Auto-generated auth secrets:** `BETTER_AUTH_SECRET` and `PAPERCLIP_AGENT_JWT_SECRET` each generated on first run via `openssl rand -hex 32`, persisted to disk (`.auth_secret` and `.agent_jwt_secret` respectively). Survive container restarts.
 5. **Composite versioning:** Docker tags follow `<bundle-version>-<paperclip-version>` (e.g., `1.0.0-1.2.3`). `VERSION` file tracks the wrapper; Paperclip version queried from npm at CI build time.
 6. **Weekly CI rebuilds:** GitHub Actions runs every Wednesday to pick up new upstream Paperclip releases.
-7. **CLI tools bundled:** Image includes Claude Code, Codex, OpenCode, Gemini CLI, and Cursor Agent CLI for Paperclip's coding agent features.
+7. **CLI tools bundled:** Image includes Claude Code, Codex, OpenCode, Gemini CLI, GitHub Copilot CLI, and Cursor Agent CLI for Paperclip's coding agent features.
 8. **Auth base URL auto-detection:** Config uses `baseUrlMode: auto` so Paperclip resolves the auth base URL dynamically, avoiding hard-coded hostnames that break across different NAS network setups.
 
 ## Environment Variables

@@ -51,6 +51,7 @@ This image includes the following coding agent CLI tools, ready to use with Pape
 - **Codex** (`@openai/codex`)
 - **OpenCode** (`opencode-ai`)
 - **Gemini CLI** (`@google/gemini-cli`)
+- **GitHub Copilot CLI** (`@github/copilot`)
 - **Cursor Agent CLI** (installed via `cursor.com/install`, available as `agent`)
 
 No additional setup is required. Paperclip uses these tools automatically when running coding agent tasks. Each tool requires its own API key, configured through the Paperclip UI.
