@@ -86,6 +86,7 @@ No unit tests, linters, or formatters are configured. Verification is done by bu
 | `PAPERCLIP_HOME` | `/paperclip-workspace/paperclip-home` | Dockerfile | Data directory |
 | `PAPERCLIP_INSTANCE_ID` | `default` | Dockerfile | Instance identifier |
 | `PAPERCLIP_CONFIG` | `.../instances/default/config.json` | Dockerfile | Config file path |
+| `PAPERCLIP_ALLOWED_HOSTNAMES` | `localhost` | Dockerfile + entrypoint | Comma-separated hostnames to register on startup |
 
 ## Common Tasks
 

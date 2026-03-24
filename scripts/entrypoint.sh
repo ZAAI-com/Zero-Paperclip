@@ -91,6 +91,20 @@ echo "[paperclip-synology] Working directory: ${PAPERCLIP_WORKING_DIR}"
 chown node:node /paperclip-workspace
 chown -R node:node "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
 
+# --- Register allowed hostnames ---
+# Runs on every start so users can add hostnames without recreating the container.
+# PAPERCLIP_ALLOWED_HOSTNAMES is a comma-separated list (e.g., "localhost,10.0.0.10,nas.local").
+PAPERCLIP_ALLOWED_HOSTNAMES="${PAPERCLIP_ALLOWED_HOSTNAMES:-localhost}"
+IFS=',' read -ra HOSTNAMES <<< "${PAPERCLIP_ALLOWED_HOSTNAMES}"
+for RAW_HOST in "${HOSTNAMES[@]}"; do
+  ALLOWED_HOST="$(echo "${RAW_HOST}" | xargs)"
+  if [ -n "${ALLOWED_HOST}" ]; then
+    echo "[paperclip-synology] Registering allowed hostname: ${ALLOWED_HOST}"
+    gosu node paperclipai allowed-hostname "${ALLOWED_HOST}" \
+      || echo "[paperclip-synology] Warning: Failed to register hostname: ${ALLOWED_HOST}"
+  fi
+done
+
 # --- Start the Paperclip server ---
 # paperclipai run handles bootstrap CEO invite generation automatically.
 # gosu drops from root to node user; exec replaces PID for proper signal handling.
