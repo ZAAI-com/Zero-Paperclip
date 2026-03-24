@@ -93,7 +93,7 @@ fi
 echo "[paperclip-synology] Working directory: ${PAPERCLIP_WORKING_DIR}"
 
 # --- Fix volume ownership (required for Docker-mounted volumes on Synology) ---
-chown node:node /paperclip-workspace "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
+chown -R node:node /paperclip-workspace "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
 
 # --- Register allowed hostnames (background, after server is ready) ---
 # Hostname registration requires the database, which is started by `paperclipai run`.
