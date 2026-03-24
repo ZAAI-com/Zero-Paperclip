@@ -45,7 +45,7 @@ No unit tests, linters, or formatters are configured. Verification is done by bu
 - UPPERCASE for all variable names: `PAPERCLIP_HOME`, `SECRET_FILE`, `CONFIG_FILE`
 - Always double-quote variable expansions: `"${VAR}"`
 - Log prefix: `echo "[paperclip-synology] ..."` for all user-facing messages
-- Use `exec` for the final server process (replaces shell, proper signal handling)
+- Use `trap`/`wait` for the final server process (forward signals to the background child for graceful shutdown)
 
 ### Dockerfile
 - Descriptive comment at the top explaining the image purpose

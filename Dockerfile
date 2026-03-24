@@ -22,7 +22,7 @@ RUN apt-get update \
 # Install Paperclip from npm (stable release)
 RUN PAPERCLIP_VERSION=${PAPERCLIP_VERSION:-$(npm view paperclipai version)} \
   && npm install --global --omit=dev paperclipai@${PAPERCLIP_VERSION}
-RUN paperclip --version
+RUN paperclipai --version
 
 # Prepare workspace directories
 RUN mkdir -p /paperclip-workspace/user-home
