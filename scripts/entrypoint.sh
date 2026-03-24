@@ -21,16 +21,14 @@ elif [ -f "${SECRET_FILE}" ]; then
   if [ -z "${BETTER_AUTH_SECRET}" ]; then
     echo "[paperclip-synology] Warning: Persisted auth secret is empty, regenerating..."
     BETTER_AUTH_SECRET="$(openssl rand -hex 32)"
-    echo "${BETTER_AUTH_SECRET}" > "${SECRET_FILE}"
-    chmod 600 "${SECRET_FILE}"
+    (umask 077; echo "${BETTER_AUTH_SECRET}" > "${SECRET_FILE}")
   fi
   export BETTER_AUTH_SECRET
   echo "[paperclip-synology] Using persisted auth secret."
 else
   # First run — generate a new secret and persist it.
   BETTER_AUTH_SECRET="$(openssl rand -hex 32)"
-  echo "${BETTER_AUTH_SECRET}" > "${SECRET_FILE}"
-  chmod 600 "${SECRET_FILE}"
+  (umask 077; echo "${BETTER_AUTH_SECRET}" > "${SECRET_FILE}")
   export BETTER_AUTH_SECRET
   echo "[paperclip-synology] Generated and persisted new auth secret."
 fi
@@ -44,15 +42,13 @@ elif [ -f "${AGENT_JWT_FILE}" ]; then
   if [ -z "${PAPERCLIP_AGENT_JWT_SECRET}" ]; then
     echo "[paperclip-synology] Warning: Persisted agent JWT secret is empty, regenerating..."
     PAPERCLIP_AGENT_JWT_SECRET="$(openssl rand -hex 32)"
-    echo "${PAPERCLIP_AGENT_JWT_SECRET}" > "${AGENT_JWT_FILE}"
-    chmod 600 "${AGENT_JWT_FILE}"
+    (umask 077; echo "${PAPERCLIP_AGENT_JWT_SECRET}" > "${AGENT_JWT_FILE}")
   fi
   export PAPERCLIP_AGENT_JWT_SECRET
   echo "[paperclip-synology] Using persisted agent JWT secret."
 else
   PAPERCLIP_AGENT_JWT_SECRET="$(openssl rand -hex 32)"
-  echo "${PAPERCLIP_AGENT_JWT_SECRET}" > "${AGENT_JWT_FILE}"
-  chmod 600 "${AGENT_JWT_FILE}"
+  (umask 077; echo "${PAPERCLIP_AGENT_JWT_SECRET}" > "${AGENT_JWT_FILE}")
   export PAPERCLIP_AGENT_JWT_SECRET
   echo "[paperclip-synology] Generated and persisted new agent JWT secret."
 fi
@@ -81,7 +77,7 @@ CONFIG_FILE="${PAPERCLIP_CONFIG:-${INSTANCE_DIR}/config.json}"
 export PAPERCLIP_CONFIG="${CONFIG_FILE}"
 if [ ! -f "${CONFIG_FILE}" ]; then
   mkdir -p "$(dirname "${CONFIG_FILE}")"
-  cat > "${CONFIG_FILE}" <<CONF
+  (umask 077; cat > "${CONFIG_FILE}" <<CONF
 {
   "\$meta": { "version": 1, "updatedAt": "$(date -u +%Y-%m-%dT%H:%M:%SZ)", "source": "onboard" },
   "database": { "mode": "embedded-postgres" },
@@ -90,15 +86,14 @@ if [ ! -f "${CONFIG_FILE}" ]; then
   "auth": { "baseUrlMode": "auto" }
 }
 CONF
-  chmod 600 "${CONFIG_FILE}"
+  )
   echo "[paperclip-synology] Generated config at ${CONFIG_FILE}"
 fi
 
 echo "[paperclip-synology] Working directory: ${PAPERCLIP_WORKING_DIR}"
 
 # --- Fix volume ownership (required for Docker-mounted volumes on Synology) ---
-chown node:node /paperclip-workspace
-chown -R node:node "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
+chown node:node /paperclip-workspace "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
 
 # --- Register allowed hostnames (background, after server is ready) ---
 # Hostname registration requires the database, which is started by `paperclipai run`.
