@@ -18,8 +18,11 @@ fi
 if [ -n "${PAPERCLIP_PUBLIC_URL}" ]; then
   PUBLIC_HOST="$(echo "${PAPERCLIP_PUBLIC_URL}" | sed -E 's|^https?://||; s|[:/].*||')"
   if [ -n "${PUBLIC_HOST}" ]; then
-    HOSTNAMES="${HOSTNAMES},${PUBLIC_HOST}"
-    echo "[paperclip-synology] Added public URL hostname: ${PUBLIC_HOST}" >&2
+    case ",${HOSTNAMES}," in
+      *",${PUBLIC_HOST},"*) ;;
+      *) HOSTNAMES="${HOSTNAMES},${PUBLIC_HOST}"
+         echo "[paperclip-synology] Added public URL hostname: ${PUBLIC_HOST}" >&2 ;;
+    esac
   fi
 fi
 

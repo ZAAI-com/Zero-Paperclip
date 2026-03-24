@@ -14,7 +14,14 @@ mkdir -p "${PAPERCLIP_WORKING_DIR}"
 # Paperclip resolves ~/.paperclip via os.userInfo().homedir (/home/node from /etc/passwd)
 # rather than $HOME. Without this, embedded Postgres data is ephemeral.
 if [ -d /home/node/.paperclip ] && [ ! -L /home/node/.paperclip ]; then
-  echo "[paperclip-synology] Moving data dir to persistent volume"
+  if [ "$(ls -A /home/node/.paperclip 2>/dev/null)" ] && [ ! "$(ls -A "${PAPERCLIP_HOME}" 2>/dev/null)" ]; then
+    echo "[paperclip-synology] Migrating existing ~/.paperclip contents to persistent volume at ${PAPERCLIP_HOME}"
+    mv /home/node/.paperclip/* "${PAPERCLIP_HOME}/" 2>/dev/null || true
+    mv /home/node/.paperclip/.[!.]* "${PAPERCLIP_HOME}/" 2>/dev/null || true
+    mv /home/node/.paperclip/..?* "${PAPERCLIP_HOME}/" 2>/dev/null || true
+  else
+    echo "[paperclip-synology] Removing ephemeral ~/.paperclip directory before linking to persistent volume"
+  fi
   rm -rf /home/node/.paperclip
 fi
 ln -sfn "${PAPERCLIP_HOME}" /home/node/.paperclip
@@ -103,7 +110,8 @@ fi
 echo "[paperclip-synology] Working directory: ${PAPERCLIP_WORKING_DIR}"
 
 # --- Fix volume ownership (required for Docker-mounted volumes on Synology) ---
-chown -R node:node /paperclip-workspace "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
+chown node:node /paperclip-workspace
+chown -R node:node "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
 chown -h node:node /home/node/.paperclip
 
 # --- Register allowed hostnames (background, after server is ready) ---
@@ -154,16 +162,23 @@ fi
 # gosu drops from root to node user. We use trap+wait instead of exec so we can
 # log shutdown signals for diagnostics (e.g., unexpected SIGTERM on Synology).
 cleanup() {
-  echo "[paperclip-synology] Received shutdown signal. Forwarding to Paperclip (PID ${PAPERCLIP_PID})..."
-  kill -TERM "${PAPERCLIP_PID}" 2>/dev/null
-  wait "${PAPERCLIP_PID}" && EXIT_CODE=$? || EXIT_CODE=$?
+  echo "[paperclip-synology] Received shutdown signal."
+  if [ -n "${PAPERCLIP_PID:-}" ]; then
+    if kill -0 "${PAPERCLIP_PID}" 2>/dev/null; then
+      echo "[paperclip-synology] Forwarding SIGTERM to Paperclip (PID ${PAPERCLIP_PID})..."
+      kill -TERM "${PAPERCLIP_PID}" 2>/dev/null || true
+    fi
+    wait "${PAPERCLIP_PID}" && EXIT_CODE=$? || EXIT_CODE=$?
+  else
+    EXIT_CODE=0
+  fi
   echo "[paperclip-synology] Paperclip exited with code ${EXIT_CODE}"
   exit ${EXIT_CODE}
 }
-trap cleanup SIGTERM SIGINT
 
 gosu node paperclipai run &
 PAPERCLIP_PID=$!
+trap cleanup SIGTERM SIGINT
 wait "${PAPERCLIP_PID}" && EXIT_CODE=$? || EXIT_CODE=$?
 echo "[paperclip-synology] Paperclip process exited with code ${EXIT_CODE}"
 exit ${EXIT_CODE}
