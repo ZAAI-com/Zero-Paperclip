@@ -66,6 +66,15 @@ if ! echo "${PORT}" | grep -qE '^[0-9]+$'; then
   export PORT
 fi
 
+# --- PAPERCLIP_PUBLIC_URL default ---
+# Paperclip uses this to determine cookie security: URLs starting with http:// disable
+# the Secure flag, allowing sessions to work over plain HTTP (typical for NAS LAN access).
+# Without this, cookies default to Secure, which browsers refuse to send over HTTP → 401.
+if [ -z "${PAPERCLIP_PUBLIC_URL}" ]; then
+  export PAPERCLIP_PUBLIC_URL="http://localhost:${PORT}"
+  echo "[paperclip-synology] PAPERCLIP_PUBLIC_URL defaulting to: ${PAPERCLIP_PUBLIC_URL}"
+fi
+
 # --- Generate config.json if missing (replaces interactive `onboard` command) ---
 INSTANCE_DIR="${PAPERCLIP_HOME}/instances/${PAPERCLIP_INSTANCE_ID:-default}"
 CONFIG_FILE="${PAPERCLIP_CONFIG:-${INSTANCE_DIR}/config.json}"
