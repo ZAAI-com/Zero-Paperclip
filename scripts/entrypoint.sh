@@ -9,6 +9,16 @@ PAPERCLIP_WORKING_DIR="/paperclip-workspace/paperclip-working"
 mkdir -p "${HOME}"
 mkdir -p "${PAPERCLIP_HOME}"
 mkdir -p "${PAPERCLIP_WORKING_DIR}"
+
+# --- Symlink ~/.paperclip to the persistent volume ---
+# Paperclip resolves ~/.paperclip via os.userInfo().homedir (/home/node from /etc/passwd)
+# rather than $HOME. Without this, embedded Postgres data is ephemeral.
+if [ -d /home/node/.paperclip ] && [ ! -L /home/node/.paperclip ]; then
+  echo "[paperclip-synology] Moving data dir to persistent volume"
+  rm -rf /home/node/.paperclip
+fi
+ln -sfn "${PAPERCLIP_HOME}" /home/node/.paperclip
+
 SECRET_FILE="${PAPERCLIP_HOME}/.auth_secret"
 
 # --- BETTER_AUTH_SECRET management ---
@@ -94,6 +104,7 @@ echo "[paperclip-synology] Working directory: ${PAPERCLIP_WORKING_DIR}"
 
 # --- Fix volume ownership (required for Docker-mounted volumes on Synology) ---
 chown -R node:node /paperclip-workspace "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
+chown -h node:node /home/node/.paperclip
 
 # --- Register allowed hostnames (background, after server is ready) ---
 # Hostname registration requires the database, which is started by `paperclipai run`.
@@ -135,5 +146,21 @@ fi
 
 # --- Start the Paperclip server ---
 # paperclipai run handles bootstrap CEO invite generation automatically.
-# gosu drops from root to node user; exec replaces PID for proper signal handling.
-exec gosu node paperclipai run
+# gosu drops from root to node user. We use trap+wait instead of exec so we can
+# log shutdown signals for diagnostics (e.g., unexpected SIGTERM on Synology).
+cleanup() {
+  echo "[paperclip-synology] Received shutdown signal. Forwarding to Paperclip (PID ${PAPERCLIP_PID})..."
+  kill -TERM "${PAPERCLIP_PID}" 2>/dev/null
+  wait "${PAPERCLIP_PID}"
+  EXIT_CODE=$?
+  echo "[paperclip-synology] Paperclip exited with code ${EXIT_CODE}"
+  exit ${EXIT_CODE}
+}
+trap cleanup SIGTERM SIGINT
+
+gosu node paperclipai run &
+PAPERCLIP_PID=$!
+wait "${PAPERCLIP_PID}"
+EXIT_CODE=$?
+echo "[paperclip-synology] Paperclip process exited with code ${EXIT_CODE}"
+exit ${EXIT_CODE}

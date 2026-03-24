@@ -91,6 +91,16 @@ This image is rebuilt weekly from the latest Paperclip npm release. To update:
 
 Your data in `/paperclip-workspace` is preserved across updates.
 
+## Troubleshooting
+
+### Container stops unexpectedly (database shutdown errors)
+
+If you see `the database system is shutting down` in logs, something sent a stop signal to the container. Check:
+
+1. **Memory limit** — In Container Manager > Container > Settings > Resources, ensure at least **2 GB RAM**. "Unlimited" is recommended.
+2. **OOM kill** — Run `docker inspect <container-id> | grep OOMKilled` on the NAS via SSH.
+3. **Synology Resource Monitor** — Check for high memory usage around the time of the crash.
+
 ## License
 
 MIT
