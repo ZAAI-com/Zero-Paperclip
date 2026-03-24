@@ -11,6 +11,7 @@ Zero-config Docker image wrapper for [Paperclip](https://github.com/paperclipai/
 ```
 Dockerfile                              # Multi-arch Docker image (node:lts-trixie-slim base)
 scripts/entrypoint.sh                   # Auth secrets management, config generation, server start
+scripts/detect-hostnames.sh             # Auto-detect container IPs for private hostname guard
 .github/workflows/Publish-DockerHub.yml # CI/CD: multi-arch build, Docker Hub publish
 docs/README.md                          # User-facing documentation
 VERSION                                 # Bundle version (bump for wrapper changes)
@@ -86,7 +87,7 @@ No unit tests, linters, or formatters are configured. Verification is done by bu
 | `PAPERCLIP_HOME` | `/paperclip-workspace/paperclip-home` | Dockerfile | Data directory |
 | `PAPERCLIP_INSTANCE_ID` | `default` | Dockerfile | Instance identifier |
 | `PAPERCLIP_CONFIG` | `.../instances/default/config.json` | Dockerfile | Config file path |
-| `PAPERCLIP_ALLOWED_HOSTNAMES` | `localhost` | Dockerfile + entrypoint | Comma-separated hostnames to register on startup |
+| `PAPERCLIP_ALLOWED_HOSTNAMES` | Auto-detected | detect-hostnames.sh | Comma-separated hostnames override; if unset, auto-detected via `hostname -I` + Synology mDNS defaults |
 
 ## Common Tasks
 

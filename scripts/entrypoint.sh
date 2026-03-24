@@ -105,7 +105,9 @@ chown -R node:node "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
 # A background subshell waits for the server to be ready, then registers hostnames.
 # Runs on every start so users can add hostnames without recreating the container.
 # PAPERCLIP_ALLOWED_HOSTNAMES is a comma-separated list (e.g., "localhost,10.0.0.10,nas.local").
-PAPERCLIP_ALLOWED_HOSTNAMES="${PAPERCLIP_ALLOWED_HOSTNAMES:-localhost,DiskStation.local,RackStation.local,10.0.0.2,10.0.0.10,192.168.0.2,192.168.0.10,192.168.1.2,192.168.1.10,192.168.2.2,192.168.2.10,192.168.178.2,192.168.178.10}"
+if [ -z "${PAPERCLIP_ALLOWED_HOSTNAMES}" ]; then
+  PAPERCLIP_ALLOWED_HOSTNAMES="$(/usr/local/bin/detect-hostnames.sh)"
+fi
 (
   MAX_ATTEMPTS=90
   POLL_INTERVAL=2

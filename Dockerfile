@@ -44,10 +44,11 @@ RUN export HOME=/tmp \
   && ln -s "$(ls -d /opt/cursor-agent/versions/*/cursor-agent)" /usr/local/bin/agent \
   && rm -rf /tmp/.local /tmp/.cursor
 
-# Add our entrypoint wrapper
+# Add our scripts
+COPY scripts/detect-hostnames.sh /usr/local/bin/detect-hostnames.sh
 COPY scripts/entrypoint.sh /usr/local/bin/entrypoint.sh
-RUN chmod +x /usr/local/bin/entrypoint.sh \
-  && chown node:node /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/detect-hostnames.sh /usr/local/bin/entrypoint.sh \
+  && chown node:node /usr/local/bin/detect-hostnames.sh /usr/local/bin/entrypoint.sh
 
 ENV NODE_ENV=production \
   TZ=Europe/Berlin \
@@ -57,8 +58,7 @@ ENV NODE_ENV=production \
   SERVE_UI=true \
   PAPERCLIP_HOME=/paperclip-workspace/paperclip-home \
   PAPERCLIP_INSTANCE_ID=default \
-  PAPERCLIP_CONFIG=/paperclip-workspace/paperclip-home/instances/default/config.json \
-  PAPERCLIP_ALLOWED_HOSTNAMES=localhost,DiskStation.local,RackStation.local,10.0.0.2,10.0.0.10,192.168.0.2,192.168.0.10,192.168.1.2,192.168.1.10,192.168.2.2,192.168.2.10,192.168.178.2,192.168.178.10
+  PAPERCLIP_CONFIG=/paperclip-workspace/paperclip-home/instances/default/config.json
 
 VOLUME ["/paperclip-workspace"]
 EXPOSE 3100
