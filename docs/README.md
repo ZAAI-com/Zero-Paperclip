@@ -33,6 +33,14 @@ Paperclip supports two deployment modes and two exposure levels:
 | `PAPERCLIP_DEPLOYMENT_MODE` | `authenticated` | Requires login, admin bootstrapped on first run | `local_trusted` — no auth | Binds to `127.0.0.1` only, unreachable from outside the container |
 | `PAPERCLIP_DEPLOYMENT_EXPOSURE` | `private` | LAN/VPN, lenient origin checks | `public` — strict origin/hostname validation | Synology NAS typically runs on a home or office network |
 
+## Allowed Hostnames
+
+If you see **"Hostname 'x.x.x.x' is not allowed"** when accessing Paperclip via your NAS IP, set the `PAPERCLIP_ALLOWED_HOSTNAMES` environment variable:
+
+    PAPERCLIP_ALLOWED_HOSTNAMES=localhost,10.0.0.10
+
+Replace `10.0.0.10` with your NAS LAN IP. Multiple hostnames can be comma-separated. This is applied on every container start, so you can add new hostnames by updating the variable and restarting.
+
 ## Bundled CLI Tools
 
 This image includes the following coding agent CLI tools, ready to use with Paperclip's agent features:
@@ -49,6 +57,7 @@ No additional setup is required. Paperclip uses these tools automatically when r
 
 | Variable | Default | Description |
 |---|---|---|
+| `PAPERCLIP_ALLOWED_HOSTNAMES` | `localhost` | Comma-separated hostnames allowed to access this instance, e.g. `localhost,10.0.0.10,nas.local` |
 | `PAPERCLIP_PUBLIC_URL` | Auto-detected | Your NAS address, e.g. `http://192.168.1.50:3100`. Set this if accessing from other devices on your network |
 | `BETTER_AUTH_SECRET` | Auto-generated and persisted | Override the auto-generated session auth secret |
 | `PAPERCLIP_AGENT_JWT_SECRET` | Auto-generated and persisted | Override the auto-generated JWT secret for coding agents |
