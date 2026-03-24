@@ -87,7 +87,7 @@ No unit tests, linters, or formatters are configured. Verification is done by bu
 | `PAPERCLIP_HOME` | `/paperclip-workspace/paperclip-home` | Dockerfile | Data directory |
 | `PAPERCLIP_INSTANCE_ID` | `default` | Dockerfile | Instance identifier |
 | `PAPERCLIP_CONFIG` | `.../instances/default/config.json` | Dockerfile | Config file path |
-| `PAPERCLIP_ALLOWED_HOSTNAMES` | Auto-detected | detect-hostnames.sh | Comma-separated hostnames override; if unset, auto-detected via `hostname -I` + Synology mDNS defaults |
+| `PAPERCLIP_ALLOWED_HOSTNAMES` | Auto-detected | detect-hostnames.sh | Additional comma-separated hostnames; merged with auto-detected IPs from `hostname -I` |
 
 ## Common Tasks
 

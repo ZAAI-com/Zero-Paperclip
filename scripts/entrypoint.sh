@@ -111,8 +111,13 @@ chown -h node:node /home/node/.paperclip
 # A background subshell waits for the server to be ready, then registers hostnames.
 # Runs on every start so users can add hostnames without recreating the container.
 # PAPERCLIP_ALLOWED_HOSTNAMES is a comma-separated list (e.g., "localhost,10.0.0.10,nas.local").
-if [ -z "${PAPERCLIP_ALLOWED_HOSTNAMES}" ]; then
-  PAPERCLIP_ALLOWED_HOSTNAMES="$(/usr/local/bin/detect-hostnames.sh)"
+# Always auto-detect hostnames, then merge with any user-provided ones
+DETECTED_HOSTNAMES="$(/usr/local/bin/detect-hostnames.sh)"
+if [ -n "${PAPERCLIP_ALLOWED_HOSTNAMES}" ]; then
+  echo "[paperclip-synology] Merging user-provided hostnames: ${PAPERCLIP_ALLOWED_HOSTNAMES}"
+  PAPERCLIP_ALLOWED_HOSTNAMES="${DETECTED_HOSTNAMES},${PAPERCLIP_ALLOWED_HOSTNAMES}"
+else
+  PAPERCLIP_ALLOWED_HOSTNAMES="${DETECTED_HOSTNAMES}"
 fi
 (
   MAX_ATTEMPTS=90
@@ -123,7 +128,7 @@ fi
 
   while [ "${ATTEMPT}" -lt "${MAX_ATTEMPTS}" ]; do
     if curl -sf -o /dev/null "http://localhost:${PORT}" 2>/dev/null; then
-      echo "[paperclip-synology] Server is ready. Registering allowed hostnames..."
+      echo "[paperclip-synology] Server is ready. Registering allowed hostnames: ${PAPERCLIP_ALLOWED_HOSTNAMES}"
       IFS=',' read -ra HOSTNAMES <<< "${PAPERCLIP_ALLOWED_HOSTNAMES}"
       for RAW_HOST in "${HOSTNAMES[@]}"; do
         ALLOWED_HOST="$(echo "${RAW_HOST}" | xargs)"
@@ -151,8 +156,7 @@ fi
 cleanup() {
   echo "[paperclip-synology] Received shutdown signal. Forwarding to Paperclip (PID ${PAPERCLIP_PID})..."
   kill -TERM "${PAPERCLIP_PID}" 2>/dev/null
-  wait "${PAPERCLIP_PID}"
-  EXIT_CODE=$?
+  wait "${PAPERCLIP_PID}" && EXIT_CODE=$? || EXIT_CODE=$?
   echo "[paperclip-synology] Paperclip exited with code ${EXIT_CODE}"
   exit ${EXIT_CODE}
 }
@@ -160,7 +164,6 @@ trap cleanup SIGTERM SIGINT
 
 gosu node paperclipai run &
 PAPERCLIP_PID=$!
-wait "${PAPERCLIP_PID}"
-EXIT_CODE=$?
+wait "${PAPERCLIP_PID}" && EXIT_CODE=$? || EXIT_CODE=$?
 echo "[paperclip-synology] Paperclip process exited with code ${EXIT_CODE}"
 exit ${EXIT_CODE}

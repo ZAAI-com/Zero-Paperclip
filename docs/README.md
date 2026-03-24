@@ -35,13 +35,13 @@ Paperclip supports two deployment modes and two exposure levels:
 
 ## Allowed Hostnames
 
-Paperclip's private deployment mode validates the `Host` header of every request against an allowlist. By default, only `localhost` is registered. If you set `PAPERCLIP_PUBLIC_URL`, Paperclip automatically adds its hostname to the allowlist.
+Paperclip's private deployment mode validates the `Host` header of every request against an allowlist. On every start, the container auto-detects `localhost` and all container IPs (via `hostname -I`). If you set `PAPERCLIP_PUBLIC_URL`, its hostname is also added automatically.
 
 If you access from other devices on your network and see **"Hostname 'x.x.x.x' is not allowed"**, set `PAPERCLIP_ALLOWED_HOSTNAMES` with your NAS IP or hostname:
 
-    PAPERCLIP_ALLOWED_HOSTNAMES=localhost,192.168.1.50,nas.local
+    PAPERCLIP_ALLOWED_HOSTNAMES=192.168.1.50,nas.local
 
-Multiple hostnames can be comma-separated. This is applied on every container start, so you can add new hostnames by updating the variable and restarting.
+These are **merged** with the auto-detected hostnames, so you only need to list additional ones. This is applied on every container start, so you can add new hostnames by updating the variable and restarting.
 
 ## Bundled CLI Tools
 
@@ -60,7 +60,7 @@ No additional setup is required. Paperclip uses these tools automatically when r
 
 | Variable | Default | Description |
 |---|---|---|
-| `PAPERCLIP_ALLOWED_HOSTNAMES` | `localhost` | Allowed hostnames for private mode. Comma-separated, e.g. `localhost,192.168.1.50,nas.local` |
+| `PAPERCLIP_ALLOWED_HOSTNAMES` | Auto-detected | Additional hostnames for private mode (merged with auto-detected IPs). Comma-separated, e.g. `192.168.1.50,nas.local` |
 | `PAPERCLIP_PUBLIC_URL` | `http://localhost:3100` | Your NAS address for network access. **Set this to your NAS LAN IP** (e.g. `http://192.168.1.50:3100`) if accessing from other devices |
 | `BETTER_AUTH_SECRET` | Auto-generated and persisted | Override the auto-generated session auth secret |
 | `PAPERCLIP_AGENT_JWT_SECRET` | Auto-generated and persisted | Override the auto-generated JWT secret for coding agents |
