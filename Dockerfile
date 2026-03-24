@@ -58,7 +58,7 @@ ENV NODE_ENV=production \
   PAPERCLIP_HOME=/paperclip-workspace/paperclip-home \
   PAPERCLIP_INSTANCE_ID=default \
   PAPERCLIP_CONFIG=/paperclip-workspace/paperclip-home/instances/default/config.json \
-  PAPERCLIP_ALLOWED_HOSTNAMES=localhost
+  PAPERCLIP_ALLOWED_HOSTNAMES=localhost,DiskStation.local,RackStation.local,10.0.0.2,10.0.0.10,192.168.0.2,192.168.0.10,192.168.1.2,192.168.1.10,192.168.2.2,192.168.2.10,192.168.178.2,192.168.178.10
 
 VOLUME ["/paperclip-workspace"]
 EXPOSE 3100
