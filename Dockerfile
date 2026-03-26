@@ -1,4 +1,4 @@
-# Dockerfile — zaaicom/paperclip-synology
+# Dockerfile — zaaicom/zero-paperclip
 # Installs Paperclip from npm and wraps it with a zero-config entrypoint
 # that auto-generates auth secrets for Synology NAS deployments.
 
