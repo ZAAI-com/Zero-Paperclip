@@ -35,13 +35,24 @@ Paperclip supports two deployment modes and two exposure levels:
 
 ## Allowed Hostnames
 
-Paperclip's private deployment mode validates the `Host` header of every request against an allowlist. On every start, the container auto-detects `localhost` and all container IPs (via `hostname -I`). If you set `PAPERCLIP_PUBLIC_URL`, its hostname is also added automatically.
+Paperclip's private deployment mode validates the `Host` header of every request against an allowlist. On every start, the container auto-detects hostnames from multiple sources:
 
-If you access from other devices on your network and see **"Hostname 'x.x.x.x' is not allowed"**, set `PAPERCLIP_ALLOWED_HOSTNAMES` with your NAS IP or hostname:
+- `localhost`, `DiskStation.local`, `RackStation.local` (static defaults)
+- Container IPs via `hostname -I`
+- Docker host IP via `host.docker.internal` (if resolvable)
+- Hostname extracted from `PAPERCLIP_PUBLIC_URL` (if set)
+
+**Important:** With Docker bridge networking (Synology's default), `hostname -I` returns the container's internal IP (e.g. `172.17.0.3`), not your NAS LAN IP. To access Paperclip from other devices, set your NAS IP via one of these methods:
+
+**Option 1** — Set `PAPERCLIP_PUBLIC_URL` (recommended, also fixes HTTP cookie issues):
+
+    PAPERCLIP_PUBLIC_URL=http://192.168.1.50:3100
+
+**Option 2** — Set `PAPERCLIP_ALLOWED_HOSTNAMES` (merged with auto-detected):
 
     PAPERCLIP_ALLOWED_HOSTNAMES=192.168.1.50,nas.local
 
-These are **merged** with the auto-detected hostnames, so you only need to list additional ones. This is applied on every container start, so you can add new hostnames by updating the variable and restarting.
+Both are applied on every container start — update the variable and restart to add new hostnames.
 
 ## Bundled CLI Tools
 
@@ -91,7 +102,29 @@ This image is rebuilt weekly from the latest Paperclip npm release. To update:
 
 Your data in `/paperclip-workspace` is preserved across updates.
 
+## Accessing the Container Shell
+
+The entrypoint runs as root (to fix volume permissions), then drops to the `node` user to run Paperclip via `gosu`. To get a shell as the same user Paperclip runs under:
+
+```bash
+docker exec -u node -it <container-name-or-id> bash
+```
+
+From there you can run `paperclipai` CLI commands directly (e.g. `paperclipai allowed-hostname <host>`).
+
+If you're already inside the container as root, switch with:
+
+```bash
+gosu node bash
+```
+
 ## Troubleshooting
+
+### "Hostname 'x.x.x.x' is not allowed"
+
+Your NAS LAN IP is not in Paperclip's hostname allowlist. Check container logs for the line starting with `Final allowed hostnames:` to see what was detected.
+
+**Fix:** Set `PAPERCLIP_PUBLIC_URL=http://<your-NAS-IP>:3100` in the container's environment variables and restart.
 
 ### Container stops unexpectedly (database shutdown errors)
 
