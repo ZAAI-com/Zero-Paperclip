@@ -127,6 +127,7 @@ if [ -n "${PAPERCLIP_ALLOWED_HOSTNAMES}" ]; then
 else
   PAPERCLIP_ALLOWED_HOSTNAMES="${DETECTED_HOSTNAMES}"
 fi
+echo "[paperclip-synology] Final allowed hostnames: ${PAPERCLIP_ALLOWED_HOSTNAMES}"
 (
   MAX_ATTEMPTS=90
   POLL_INTERVAL=2
