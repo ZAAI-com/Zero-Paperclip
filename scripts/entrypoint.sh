@@ -26,6 +26,22 @@ if [ -d /home/node/.paperclip ] && [ ! -L /home/node/.paperclip ]; then
 fi
 ln -sfn "${PAPERCLIP_HOME}" /home/node/.paperclip
 
+# --- Symlink CLI tool config directories to the persistent volume ---
+# Same issue as .paperclip above: Node.js CLI tools may resolve ~ via
+# os.userInfo().homedir (/home/node) instead of $HOME. Without symlinks,
+# auth tokens are written to the ephemeral container layer and lost on recreate.
+for DIR_NAME in .claude .codex .cursor .config .local; do
+  PERSISTENT_DIR="${HOME}/${DIR_NAME}"
+  PASSWD_DIR="/home/node/${DIR_NAME}"
+  mkdir -p "${PERSISTENT_DIR}"
+  if [ -d "${PASSWD_DIR}" ] && [ ! -L "${PASSWD_DIR}" ]; then
+    # Migrate any existing contents before replacing with symlink
+    cp -a "${PASSWD_DIR}/." "${PERSISTENT_DIR}/" 2>/dev/null || true
+    rm -rf "${PASSWD_DIR}"
+  fi
+  ln -sfn "${PERSISTENT_DIR}" "${PASSWD_DIR}"
+done
+
 SECRET_FILE="${PAPERCLIP_HOME}/.auth_secret"
 
 # --- BETTER_AUTH_SECRET management ---
@@ -113,6 +129,9 @@ echo "[zero-paperclip] Working directory: ${PAPERCLIP_WORKING_DIR}"
 chown node:node /paperclip-workspace
 chown -R node:node "${HOME}" "${PAPERCLIP_HOME}" "${PAPERCLIP_WORKING_DIR}"
 chown -h node:node /home/node/.paperclip
+for DIR_NAME in .claude .codex .cursor .config .local; do
+  chown -h node:node "/home/node/${DIR_NAME}"
+done
 
 # --- Register allowed hostnames (background, after server is ready) ---
 # Hostname registration requires the database, which is started by `paperclipai run`.
