@@ -34,10 +34,17 @@ for DIR_NAME in .claude .codex .cursor .config .local; do
   PERSISTENT_DIR="${HOME}/${DIR_NAME}"
   PASSWD_DIR="/home/node/${DIR_NAME}"
   mkdir -p "${PERSISTENT_DIR}"
-  if [ -d "${PASSWD_DIR}" ] && [ ! -L "${PASSWD_DIR}" ]; then
-    # Migrate any existing contents before replacing with symlink
-    cp -a "${PASSWD_DIR}/." "${PERSISTENT_DIR}/" 2>/dev/null || true
-    rm -rf "${PASSWD_DIR}"
+  if [ -e "${PASSWD_DIR}" ] && [ ! -L "${PASSWD_DIR}" ]; then
+    if [ -d "${PASSWD_DIR}" ]; then
+      # Migrate any existing contents before replacing with symlink
+      if [ -n "$(ls -A "${PASSWD_DIR}" 2>/dev/null)" ]; then
+        cp -a "${PASSWD_DIR}/." "${PERSISTENT_DIR}/"
+      fi
+      rm -rf "${PASSWD_DIR}"
+    else
+      # Non-directory path (regular file, etc.) — remove before creating symlink
+      rm -f "${PASSWD_DIR}"
+    fi
   fi
   ln -sfn "${PERSISTENT_DIR}" "${PASSWD_DIR}"
 done
