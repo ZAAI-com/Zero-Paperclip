@@ -26,7 +26,7 @@ if [ -n "${DETECTED_IPS}" ]; then
   for IP in ${DETECTED_IPS}; do
     add_hostname "${IP}"
   done
-  echo "[paperclip-synology] Auto-detected container IPs: ${DETECTED_IPS}" >&2
+  echo "[zero-paperclip] Auto-detected container IPs: ${DETECTED_IPS}" >&2
 fi
 
 # --- Docker host IP via host.docker.internal ---
@@ -38,10 +38,10 @@ if GETENT_RESULT="$(getent hosts host.docker.internal 2>/dev/null)"; then
   if [ -n "${DOCKER_HOST_IP}" ]; then
     add_hostname "${DOCKER_HOST_IP}"
     add_hostname "host.docker.internal"
-    echo "[paperclip-synology] Resolved host.docker.internal → ${DOCKER_HOST_IP}" >&2
+    echo "[zero-paperclip] Resolved host.docker.internal → ${DOCKER_HOST_IP}" >&2
   fi
 else
-  echo "[paperclip-synology] host.docker.internal not resolvable (expected on bridge networking without --add-host)" >&2
+  echo "[zero-paperclip] host.docker.internal not resolvable (expected on bridge networking without --add-host)" >&2
 fi
 
 # --- Extract hostname from PAPERCLIP_PUBLIC_URL if set ---
@@ -49,7 +49,7 @@ if [ -n "${PAPERCLIP_PUBLIC_URL}" ]; then
   PUBLIC_HOST="$(echo "${PAPERCLIP_PUBLIC_URL}" | sed -E 's|^https?://||; s|[:/].*||')"
   if [ -n "${PUBLIC_HOST}" ]; then
     if add_hostname "${PUBLIC_HOST}"; then
-      echo "[paperclip-synology] Added public URL hostname: ${PUBLIC_HOST}" >&2
+      echo "[zero-paperclip] Added public URL hostname: ${PUBLIC_HOST}" >&2
     fi
   fi
 fi
@@ -64,8 +64,8 @@ for H in "${HOST_ARRAY[@]}"; do
   esac
 done
 if [ "${HAS_LAN_IP}" = false ]; then
-  echo "[paperclip-synology] No LAN IP detected. If you access Paperclip from other devices," >&2
-  echo "[paperclip-synology]   set PAPERCLIP_ALLOWED_HOSTNAMES=<your-NAS-IP> or PAPERCLIP_PUBLIC_URL=http://<your-NAS-IP>:${PORT:-3100}" >&2
+  echo "[zero-paperclip] No LAN IP detected. If you access Paperclip from other devices," >&2
+  echo "[zero-paperclip]   set PAPERCLIP_ALLOWED_HOSTNAMES=<your-NAS-IP> or PAPERCLIP_PUBLIC_URL=http://<your-NAS-IP>:${PORT:-3100}" >&2
 fi
 
 echo "${HOSTNAMES}"

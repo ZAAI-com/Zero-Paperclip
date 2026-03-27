@@ -1,8 +1,8 @@
-# paperclip-synology
+# Zero-Paperclip
 
 Zero-config Docker image wrapper for [Paperclip](https://github.com/paperclipai/paperclip), optimized for Synology NAS deployments. Installs Paperclip from npm (`paperclipai@latest`), auto-generates auth secrets, and sets Synology-friendly defaults.
 
-- **Docker Hub:** `zaaicom/paperclip-synology`
+- **Docker Hub:** `zaaicom/zero-paperclip`
 - **License:** MIT (ZAAI)
 - **No application source code** — purely configuration and infrastructure
 
@@ -24,10 +24,10 @@ LICENSE                                 # MIT license
 
 ```bash
 # Build locally (single-arch)
-docker build -t paperclip-synology:test .
+docker build -t zero-paperclip:test .
 
 # Run locally
-docker run -p 3100:3100 -v paperclip-data:/paperclip-workspace paperclip-synology:test
+docker run -p 3100:3100 -v paperclip-data:/paperclip-workspace zero-paperclip:test
 
 # Check first-run output (admin invite URL appears in logs)
 docker logs <container-id>
@@ -44,7 +44,7 @@ No unit tests, linters, or formatters are configured. Verification is done by bu
 - `set -e` at the top of every script
 - UPPERCASE for all variable names: `PAPERCLIP_HOME`, `SECRET_FILE`, `CONFIG_FILE`
 - Always double-quote variable expansions: `"${VAR}"`
-- Log prefix: `echo "[paperclip-synology] ..."` for all user-facing messages
+- Log prefix: `echo "[zero-paperclip] ..."` for all user-facing messages
 - Use `trap`/`wait` for the final server process (forward signals to the background child for graceful shutdown)
 
 ### Dockerfile

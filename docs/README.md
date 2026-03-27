@@ -1,4 +1,4 @@
-# zaaicom/paperclip-synology
+# zaaicom/zero-paperclip
 
 **Zero-config [Paperclip](https://github.com/paperclipai/paperclip) Docker image for Synology NAS**
 
@@ -8,7 +8,7 @@ A wrapper around Paperclip that auto-generates auth secrets and sets Synology-fr
 
 ## Quick Start (Synology Container Manager)
 
-1. **Pull** `zaaicom/paperclip-synology:latest` from the Registry
+1. **Pull** `zaaicom/zero-paperclip:latest` from the Registry
 2. **Create container** — set port `3100:3100` and mount volume `/volume1/docker/paperclip-workspace` → `/paperclip-workspace`
 3. **Start** the container
 4. **First run only** — check `docker logs` for the admin invite URL (or find it at `/volume1/docker/paperclip-workspace/paperclip-home/.bootstrap-url`)
@@ -97,7 +97,7 @@ Host paths assume the default volume mount `/volume1/docker/paperclip-workspace`
 
 This image is rebuilt weekly from the latest Paperclip npm release. To update:
 
-1. Re-pull `zaaicom/paperclip-synology:latest`
+1. Re-pull `zaaicom/zero-paperclip:latest`
 2. **Reset** the container in Container Manager
 
 Your data in `/paperclip-workspace` is preserved across updates.

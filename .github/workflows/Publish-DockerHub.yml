@@ -54,7 +54,7 @@ jobs:
         id: check
         run: |
           TAG="${{ steps.bundle.outputs.version }}-${{ steps.paperclip.outputs.version }}"
-          if docker manifest inspect "zaaicom/paperclip-synology:$TAG" > /dev/null 2>&1; then
+          if docker manifest inspect "zaaicom/zero-paperclip:$TAG" > /dev/null 2>&1; then
             echo "skip=true" >> "$GITHUB_OUTPUT"
             echo "::notice::Tag $TAG already exists, skipping build"
           else
@@ -72,5 +72,5 @@ jobs:
             BUNDLE_VERSION=${{ steps.bundle.outputs.version }}
             PAPERCLIP_VERSION=${{ steps.paperclip.outputs.version }}
           tags: |
-            zaaicom/paperclip-synology:latest
-            zaaicom/paperclip-synology:${{ steps.bundle.outputs.version }}-${{ steps.paperclip.outputs.version }}
+            zaaicom/zero-paperclip:latest
+            zaaicom/zero-paperclip:${{ steps.bundle.outputs.version }}-${{ steps.paperclip.outputs.version }}

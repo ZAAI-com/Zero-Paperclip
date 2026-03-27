@@ -1,4 +1,4 @@
-# Dockerfile — zaaicom/paperclip-synology
+# Dockerfile — zaaicom/zero-paperclip
 # Installs Paperclip from npm and wraps it with a zero-config entrypoint
 # that auto-generates auth secrets for Synology NAS deployments.
 
@@ -13,8 +13,9 @@ LABEL org.opencontainers.image.version="${BUNDLE_VERSION}-${PAPERCLIP_VERSION}" 
 # openssl is required at runtime for secret generation in entrypoint.sh
 # gosu is required for dropping root to node user after volume setup
 # locales is required for embedded PostgreSQL (needs en_US.UTF-8)
+# bubblewrap is required by Codex CLI for sandboxed execution
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends ca-certificates curl openssl gosu locales tzdata \
+  && apt-get install -y --no-install-recommends bubblewrap ca-certificates curl openssl gosu locales tzdata \
   && sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen \
   && locale-gen \
   && rm -rf /var/lib/apt/lists/*
