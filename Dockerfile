@@ -15,10 +15,20 @@ LABEL org.opencontainers.image.version="${BUNDLE_VERSION}-${PAPERCLIP_VERSION}" 
 # locales is required for embedded PostgreSQL (needs en_US.UTF-8)
 # bubblewrap is required by Codex CLI for sandboxed execution
 RUN apt-get update \
-  && apt-get install -y --no-install-recommends bubblewrap ca-certificates curl openssl gosu locales tzdata \
+  && apt-get install -y --no-install-recommends bubblewrap ca-certificates curl git openssl gosu locales tzdata \
   && sed -i 's/^# *\(en_US.UTF-8\)/\1/' /etc/locale.gen \
   && locale-gen \
   && rm -rf /var/lib/apt/lists/*
+
+# GitHub CLI for repository operations (PR creation, issue management, etc.)
+RUN curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg \
+      -o /usr/share/keyrings/githubcli-archive-keyring.gpg \
+  && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" \
+      > /etc/apt/sources.list.d/github-cli.list \
+  && apt-get update \
+  && apt-get install -y --no-install-recommends gh \
+  && rm -rf /var/lib/apt/lists/*
+RUN gh --version
 
 # Install Paperclip from npm (stable release)
 RUN PAPERCLIP_VERSION=${PAPERCLIP_VERSION:-$(npm view paperclipai version)} \
