@@ -49,6 +49,66 @@ for DIR_NAME in .claude .codex .cursor .config .local; do
   ln -sfn "${PERSISTENT_DIR}" "${PASSWD_DIR}"
 done
 
+# --- Pre-create CLI tool settings for non-interactive agent use ---
+# Coding agent CLIs have internal permission systems that prompt for approval.
+# In non-interactive mode (running as agents inside Paperclip), these prompts
+# surface as errors. Pre-create permissive configs since Docker is the isolation boundary.
+
+# Claude Code: ~/.claude/settings.local.json
+CLAUDE_SETTINGS_FILE="${HOME}/.claude/settings.local.json"
+if [ ! -f "${CLAUDE_SETTINGS_FILE}" ]; then
+  (umask 077; cat > "${CLAUDE_SETTINGS_FILE}" <<'CLAUDECONF'
+{
+  "permissions": {
+    "allow": [
+      "Bash(*)",
+      "Read(*)",
+      "Write(*)",
+      "Edit(*)",
+      "WebFetch(*)",
+      "Grep(*)",
+      "Glob(*)"
+    ],
+    "deny": []
+  }
+}
+CLAUDECONF
+  )
+  echo "[zero-paperclip] Created Claude Code settings at ${CLAUDE_SETTINGS_FILE}"
+fi
+
+# Codex: ~/.codex/config.toml
+CODEX_CONFIG_FILE="${HOME}/.codex/config.toml"
+if [ ! -f "${CODEX_CONFIG_FILE}" ]; then
+  (umask 077; cat > "${CODEX_CONFIG_FILE}" <<'CODEXCONF'
+approval_policy = "auto-edit"
+full_auto_error_mode = "ignore-and-continue"
+CODEXCONF
+  )
+  echo "[zero-paperclip] Created Codex config at ${CODEX_CONFIG_FILE}"
+fi
+
+# Cursor Agent: ~/.cursor/cli-config.json
+CURSOR_CONFIG_FILE="${HOME}/.cursor/cli-config.json"
+if [ ! -f "${CURSOR_CONFIG_FILE}" ]; then
+  (umask 077; cat > "${CURSOR_CONFIG_FILE}" <<'CURSORCONF'
+{
+  "permissions": {
+    "allow": [
+      "Shell(*)",
+      "Read(*)",
+      "Write(*)",
+      "WebFetch(*)",
+      "Mcp(*)"
+    ],
+    "deny": []
+  }
+}
+CURSORCONF
+  )
+  echo "[zero-paperclip] Created Cursor Agent config at ${CURSOR_CONFIG_FILE}"
+fi
+
 SECRET_FILE="${PAPERCLIP_HOME}/.auth_secret"
 
 # --- BETTER_AUTH_SECRET management ---
